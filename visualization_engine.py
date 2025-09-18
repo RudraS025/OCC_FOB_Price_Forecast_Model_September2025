@@ -56,6 +56,12 @@ class VisualizationEngine:
         try:
             fig = go.Figure()
             
+            # Convert future_dates to proper format if they're pandas Timestamps
+            if future_dates and hasattr(future_dates[0], 'strftime'):
+                future_dates_formatted = [date.strftime('%Y-%m-%d') if hasattr(date, 'strftime') else str(date) for date in future_dates]
+            else:
+                future_dates_formatted = future_dates
+            
             # Historical data
             fig.add_trace(go.Scatter(
                 x=historical_data['Month'],
@@ -69,7 +75,7 @@ class VisualizationEngine:
             
             # Forecast
             fig.add_trace(go.Scatter(
-                x=future_dates,
+                x=future_dates_formatted,
                 y=forecast,
                 mode='lines+markers',
                 name='Forecast',
@@ -84,7 +90,7 @@ class VisualizationEngine:
                 
                 # Upper confidence interval
                 fig.add_trace(go.Scatter(
-                    x=future_dates,
+                    x=future_dates_formatted,
                     y=upper_ci,
                     mode='lines',
                     line=dict(width=0),
@@ -94,7 +100,7 @@ class VisualizationEngine:
                 
                 # Lower confidence interval with fill
                 fig.add_trace(go.Scatter(
-                    x=future_dates,
+                    x=future_dates_formatted,
                     y=lower_ci,
                     mode='lines',
                     line=dict(width=0),
