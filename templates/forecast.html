@@ -315,8 +315,11 @@ function createForecastChart(forecastData) {
     fetch('/api/historical_data')
         .then(response => response.json())
         .then(historicalData => {
+            console.log('Historical data received:', historicalData);
+            
             // Get last 4 months of historical data
             const last4Months = historicalData.slice(-4);
+            console.log('Last 4 months:', last4Months);
             
             // Prepare data for Chart.js
             const allLabels = [];
@@ -325,29 +328,74 @@ function createForecastChart(forecastData) {
             const confidenceUpper = [];
             const confidenceLower = [];
             
+            // Prepare data arrays
+            const connectionPrices = []; // For dotted connection line
+            
             // Add historical data
             last4Months.forEach(item => {
                 const date = new Date(item.Month);
                 allLabels.push(date.toLocaleDateString('en-US', { year: 'numeric', month: 'short' }));
-                historicalPrices.push(item['Price (USD/ton)']);
+                // Try different possible key names for price
+                const price = item['Price (USD/ton)'] || item['Price(USD/ton)'] || item.price || item.Price;
+                historicalPrices.push(price);
                 forecastPrices.push(null);
-                confidenceUpper.push(null);
-                confidenceLower.push(null);
+                connectionPrices.push(null);
+                console.log('Historical point:', { date: allLabels[allLabels.length-1], price: price });
             });
             
-            // Add forecast data
+            // Add connection point between historical and forecast
+            if (historicalPrices.length > 0 && forecastData.forecast.length > 0) {
+                const lastHistoricalPrice = historicalPrices[historicalPrices.length - 1];
+                const firstForecastDate = new Date(forecastData.future_dates[0]);
+                allLabels.push(firstForecastDate.toLocaleDateString('en-US', { year: 'numeric', month: 'short' }));
+                historicalPrices.push(null);
+                forecastPrices.push(null);
+                connectionPrices.push(lastHistoricalPrice);
+                
+                // Add second connection point for smooth transition
+                allLabels.push(firstForecastDate.toLocaleDateString('en-US', { year: 'numeric', month: 'short' }));
+                historicalPrices.push(null);
+                forecastPrices.push(forecastData.forecast[0]);
+                connectionPrices.push(forecastData.forecast[0]);
+            }
+            
+            // Add remaining forecast data
             forecastData.future_dates.forEach((date, index) => {
+                if (index === 0) return; // Skip first point as we already added it
                 const dateObj = new Date(date);
                 allLabels.push(dateObj.toLocaleDateString('en-US', { year: 'numeric', month: 'short' }));
                 historicalPrices.push(null);
                 forecastPrices.push(forecastData.forecast[index]);
-                confidenceUpper.push(forecastData.upper_ci[index]);
-                confidenceLower.push(forecastData.lower_ci[index]);
+                connectionPrices.push(null);
             });
+            
+            console.log('Chart data prepared:', {
+                labels: allLabels,
+                historical: historicalPrices,
+                forecast: forecastPrices,
+                connection: connectionPrices
+            });
+            
+            // Calculate dynamic Y-axis range
+            const allValues = [
+                ...historicalPrices.filter(v => v !== null),
+                ...forecastPrices.filter(v => v !== null),
+                ...connectionPrices.filter(v => v !== null)
+            ];
+            const minValue = Math.min(...allValues);
+            const maxValue = Math.max(...allValues);
+            const valueRange = maxValue - minValue;
+            const yAxisMin = Math.max(0, minValue - (valueRange * 0.1 + 10)); // 10% buffer + 10 points minimum
+            const yAxisMax = maxValue + (valueRange * 0.1 + 10); // 10% buffer + 10 points
+            
+            console.log('Y-axis range:', { min: yAxisMin, max: yAxisMax });
             
             // Create the chart
             const ctx = document.getElementById('forecast-chart');
-            if (!ctx) return;
+            if (!ctx) {
+                console.error('Chart container not found');
+                return;
+            }
             
             // Clear any existing chart
             if (window.forecastChart) {
@@ -369,11 +417,24 @@ function createForecastChart(forecastData) {
                             borderColor: '#2E86AB',
                             backgroundColor: 'rgba(46, 134, 171, 0.1)',
                             borderWidth: 3,
-                            pointRadius: 5,
+                            pointRadius: 6,
                             pointBackgroundColor: '#2E86AB',
                             pointBorderColor: '#ffffff',
                             pointBorderWidth: 2,
-                            tension: 0.4
+                            tension: 0.2,
+                            spanGaps: false
+                        },
+                        {
+                            label: 'Connection',
+                            data: connectionPrices,
+                            borderColor: '#888888',
+                            backgroundColor: 'transparent',
+                            borderWidth: 2,
+                            pointRadius: 0,
+                            borderDash: [5, 5],
+                            tension: 0,
+                            spanGaps: false,
+                            showLine: true
                         },
                         {
                             label: 'Forecasted Prices',
@@ -381,32 +442,13 @@ function createForecastChart(forecastData) {
                             borderColor: '#F18F01',
                             backgroundColor: 'rgba(241, 143, 1, 0.1)',
                             borderWidth: 3,
-                            pointRadius: 5,
+                            pointRadius: 6,
                             pointBackgroundColor: '#F18F01',
                             pointBorderColor: '#ffffff',
                             pointBorderWidth: 2,
                             borderDash: [5, 5],
-                            tension: 0.4
-                        },
-                        {
-                            label: 'Upper Confidence',
-                            data: confidenceUpper,
-                            borderColor: 'rgba(241, 143, 1, 0.3)',
-                            backgroundColor: 'transparent',
-                            borderWidth: 1,
-                            pointRadius: 0,
-                            fill: false,
-                            borderDash: [2, 2]
-                        },
-                        {
-                            label: 'Lower Confidence',
-                            data: confidenceLower,
-                            borderColor: 'rgba(241, 143, 1, 0.3)',
-                            backgroundColor: 'rgba(241, 143, 1, 0.1)',
-                            borderWidth: 1,
-                            pointRadius: 0,
-                            fill: '-1',
-                            borderDash: [2, 2]
+                            tension: 0.2,
+                            spanGaps: false
                         }
                     ]
                 },
@@ -431,7 +473,11 @@ function createForecastChart(forecastData) {
                             position: 'top',
                             labels: {
                                 usePointStyle: true,
-                                padding: 20
+                                padding: 20,
+                                filter: function(legendItem, chartData) {
+                                    // Hide the connection line from legend
+                                    return legendItem.text !== 'Connection';
+                                }
                             }
                         },
                         tooltip: {
@@ -442,10 +488,13 @@ function createForecastChart(forecastData) {
                             borderWidth: 1,
                             callbacks: {
                                 label: function(context) {
-                                    if (context.raw !== null) {
+                                    if (context.raw !== null && context.raw !== undefined) {
                                         return context.dataset.label + ': $' + context.raw.toFixed(2);
                                     }
                                     return null;
+                                },
+                                title: function(context) {
+                                    return 'Period: ' + context[0].label;
                                 }
                             }
                         }
@@ -460,8 +509,10 @@ function createForecastChart(forecastData) {
                                 }
                             },
                             grid: {
-                                color: 'rgba(0, 0, 0, 0.1)'
-                            }
+                                color: 'rgba(0, 0, 0, 0.1)',
+                                offset: true
+                            },
+                            offset: true
                         },
                         y: {
                             title: {
@@ -471,6 +522,8 @@ function createForecastChart(forecastData) {
                                     weight: 'bold'
                                 }
                             },
+                            min: yAxisMin,
+                            max: yAxisMax,
                             grid: {
                                 color: 'rgba(0, 0, 0, 0.1)'
                             },
