@@ -1,0 +1,872 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics Dashboard - OCC Price Forecasting{% endblock %}
+
+{% block head %}
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+<style>
+/* MODERN PROFESSIONAL ANALYTICS DASHBOARD */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+    color: #f8fafc;
+    line-height: 1.6;
+}
+
+.dashboard-header {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 2rem 0;
+    text-align: center;
+}
+
+.dashboard-header h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #f8fafc;
+    margin-bottom: 0.5rem;
+}
+
+.dashboard-header p {
+    color: #94a3b8;
+    font-size: 1.1rem;
+}
+
+.dashboard-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+/* PROFESSIONAL METRICS GRID */
+.metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.metric-card {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(20px);
+    border-radius: 16px;
+    padding: 2rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.metric-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899);
+}
+
+.metric-card:hover {
+    transform: translateY(-4px);
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.metric-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.metric-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1rem;
+    font-size: 1.5rem;
+    color: white;
+}
+
+.metric-title {
+    font-size: 0.9rem;
+    color: #94a3b8;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.metric-value {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: #f8fafc;
+    margin: 0.5rem 0;
+}
+
+.metric-subtitle {
+    font-size: 0.9rem;
+    color: #64748b;
+}
+
+/* TABS NAVIGATION */
+.tabs-container {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    padding: 0.5rem;
+    margin-bottom: 2rem;
+    display: inline-flex;
+    width: 100%;
+    justify-content: center;
+}
+
+.tab-button {
+    flex: 1;
+    padding: 1rem 2rem;
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-weight: 600;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.tab-button:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #f8fafc;
+}
+
+.tab-button.active {
+    background: rgba(255, 255, 255, 0.15);
+    color: #f8fafc;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* CONTENT SECTIONS */
+.content-section {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 20px;
+    padding: 2rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    min-height: 600px;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+    animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.chart-container {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.chart-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #f8fafc;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.chart-title::before {
+    content: '';
+    width: 4px;
+    height: 20px;
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    border-radius: 2px;
+}
+
+.chart-wrapper {
+    height: 400px;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 12px;
+    position: relative;
+}
+
+.chart-wrapper.small {
+    height: 300px;
+}
+
+.charts-grid {
+    display: grid;
+    gap: 1.5rem;
+}
+
+.charts-grid.two-cols {
+    grid-template-columns: 1fr 1fr;
+}
+
+.charts-grid.four-grid {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+}
+
+/* ACTION BUTTONS */
+.action-buttons {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+}
+
+.action-btn {
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(59, 130, 246, 0.3);
+}
+
+/* PERFORMANCE TABLE */
+.performance-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.performance-table th,
+.performance-table td {
+    padding: 1rem 1.5rem;
+    text-align: left;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.performance-table th {
+    background: rgba(255, 255, 255, 0.1);
+    color: #f8fafc;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.performance-table td {
+    color: #e2e8f0;
+}
+
+.performance-table tr:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.performance-table .best-model {
+    background: rgba(34, 197, 94, 0.2);
+    font-weight: 600;
+    color: #f8fafc;
+}
+
+/* RESPONSIVE DESIGN */
+@media (max-width: 1200px) {
+    .charts-grid.two-cols {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .charts-grid.four-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .metrics-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .dashboard-header h1 {
+        font-size: 2rem;
+    }
+
+    .tabs-container {
+        flex-direction: column;
+    }
+}
+
+/* LOADING STATES */
+.loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 200px;
+    color: #94a3b8;
+    font-size: 1.1rem;
+}
+
+.spinner {
+    border: 3px solid rgba(255, 255, 255, 0.1);
+    border-top: 3px solid #3b82f6;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    animation: spin 1s linear infinite;
+    margin-right: 0.5rem;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Dashboard Header -->
+<div class="dashboard-header">
+    <h1><i class="fas fa-chart-line"></i> Analytics Dashboard</h1>
+    <p>Professional OCC Price Forecasting Analytics</p>
+</div>
+
+<!-- Main Dashboard Container -->
+<div class="dashboard-container">
+    <!-- Key Metrics Grid -->
+    <div class="metrics-grid">
+        <!-- Data Points Metric -->
+        <div class="metric-card">
+            <div class="metric-header">
+                <div class="metric-icon">
+                    <i class="fas fa-database"></i>
+                </div>
+                <div>
+                    <div class="metric-title">Data Points</div>
+                </div>
+            </div>
+            <div class="metric-value" id="data-points">105</div>
+            <div class="metric-subtitle">9 years of historical market data</div>
+        </div>
+
+        <!-- Average Price Metric -->
+        <div class="metric-card">
+            <div class="metric-header">
+                <div class="metric-icon">
+                    <i class="fas fa-dollar-sign"></i>
+                </div>
+                <div>
+                    <div class="metric-title">Average Price</div>
+                </div>
+            </div>
+            <div class="metric-value" id="avg-price">$144</div>
+            <div class="metric-subtitle">Per ton USD - Market average</div>
+        </div>
+
+        <!-- Volatility Metric -->
+        <div class="metric-card">
+            <div class="metric-header">
+                <div class="metric-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div>
+                    <div class="metric-title">Price Volatility</div>
+                </div>
+            </div>
+            <div class="metric-value" id="volatility">$48</div>
+            <div class="metric-subtitle">Standard deviation - Risk metric</div>
+        </div>
+
+        <!-- Best Model Metric -->
+        <div class="metric-card">
+            <div class="metric-header">
+                <div class="metric-icon">
+                    <i class="fas fa-brain"></i>
+                </div>
+                <div>
+                    <div class="metric-title">Best Model</div>
+                </div>
+            </div>
+            <div class="metric-value" id="best-model">PROPHET</div>
+            <div class="metric-subtitle">5 ML models trained & optimized</div>
+        </div>
+    </div>
+
+    <!-- Tabs Navigation -->
+    <div class="tabs-container">
+        <button class="tab-button active" onclick="switchTab('trends')">
+            <i class="fas fa-chart-line"></i> Price Trends
+        </button>
+        <button class="tab-button" onclick="switchTab('seasonal')">
+            <i class="fas fa-calendar-alt"></i> Seasonal Analysis
+        </button>
+        <button class="tab-button" onclick="switchTab('performance')">
+            <i class="fas fa-trophy"></i> Model Performance
+        </button>
+        <button class="tab-button" onclick="switchTab('statistics')">
+            <i class="fas fa-calculator"></i> Statistical Analysis
+        </button>
+    </div>
+
+    <!-- Content Section -->
+    <div class="content-section">
+        <!-- Price Trends Tab -->
+        <div id="trends-content" class="tab-content active">
+            <div class="action-buttons">
+                <button class="action-btn" onclick="refreshAnalytics()">
+                    <i class="fas fa-sync-alt"></i> Refresh Data
+                </button>
+                <button class="action-btn" onclick="exportData()">
+                    <i class="fas fa-download"></i> Export Analysis
+                </button>
+            </div>
+            
+            <div class="chart-container">
+                <div class="chart-title">Historical Price Trends</div>
+                <div class="chart-wrapper" id="price-trends-chart">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        Loading price trend data...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Seasonal Analysis Tab -->
+        <div id="seasonal-content" class="tab-content">
+            <div class="charts-grid two-cols">
+                <div class="chart-container">
+                    <div class="chart-title">Seasonal Patterns</div>
+                    <div class="chart-wrapper" id="seasonal-chart">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                            Loading seasonal analysis...
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="chart-container">
+                    <div class="chart-title">Price Distribution</div>
+                    <div class="chart-wrapper" id="distribution-chart">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                            Loading price distribution...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Model Performance Tab -->
+        <div id="performance-content" class="tab-content">
+            <div class="chart-container">
+                <div class="chart-title">Model Accuracy Comparison</div>
+                <div class="chart-wrapper" id="model-comparison-chart">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        Loading model performance...
+                    </div>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <div class="chart-title">Detailed Performance Metrics</div>
+                <table class="performance-table" id="performance-metrics-table">
+                    <thead>
+                        <tr>
+                            <th>Model</th>
+                            <th>RMSE</th>
+                            <th>MAE</th>
+                            <th>MAPE (%)</th>
+                            <th>R² Score</th>
+                            <th>Training Time (s)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="performance-metrics-body">
+                        <tr>
+                            <td colspan="6" style="text-align: center; padding: 2rem;">
+                                <div class="loading">
+                                    <div class="spinner"></div>
+                                    Loading performance metrics...
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Statistical Analysis Tab -->
+        <div id="statistics-content" class="tab-content">
+            <div class="charts-grid four-grid">
+                <div class="chart-container">
+                    <div class="chart-title">Autocorrelation</div>
+                    <div class="chart-wrapper small" id="autocorr-chart">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                            Loading autocorrelation...
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="chart-container">
+                    <div class="chart-title">Moving Averages</div>
+                    <div class="chart-wrapper small" id="moving-avg-chart">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                            Loading moving averages...
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="chart-container">
+                    <div class="chart-title">Volatility Analysis</div>
+                    <div class="chart-wrapper small" id="volatility-chart">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                            Loading volatility analysis...
+                        </div>
+                </div>
+                
+                <div class="chart-container">
+                    <div class="chart-title">Statistical Summary</div>
+                    <div class="chart-wrapper small" id="summary-stats-chart">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                            Loading statistical summary...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Professional Analytics JavaScript -->
+<script src="https://cdn.plot.ly/plotly-2.24.1.min.js"></script>
+<script>
+// Professional Analytics Dashboard Class
+class ProfessionalAnalytics {
+    constructor() {
+        this.currentTab = 'trends';
+        this.data = {};
+        this.init();
+    }
+
+    async init() {
+        try {
+            await this.loadData();
+            this.updateMetrics();
+            this.renderCharts();
+        } catch (error) {
+            console.error('Failed to initialize analytics:', error);
+            this.showError('Failed to load analytics data');
+        }
+    }
+
+    async loadData() {
+        try {
+            // Load historical data
+            const historicalResponse = await fetch('/api/historical_data');
+            const historicalData = await historicalResponse.json();
+            
+            // Load model performance
+            const performanceResponse = await fetch('/api/model_performance');
+            const performanceData = await performanceResponse.json();
+            
+            this.data = {
+                historical: historicalData,
+                performance: performanceData
+            };
+            
+            console.log('Data loaded:', this.data);
+        } catch (error) {
+            console.error('Error loading data:', error);
+            throw error;
+        }
+    }
+
+    updateMetrics() {
+        if (this.data.historical && this.data.historical.success) {
+            const data = this.data.historical.data;
+            const prices = data.map(d => d.price);
+            
+            // Calculate real metrics
+            const avgPrice = Math.round(prices.reduce((a, b) => a + b, 0) / prices.length);
+            const volatility = Math.round(this.calculateStandardDeviation(prices));
+            
+            // Update display
+            document.getElementById('data-points').textContent = data.length;
+            document.getElementById('avg-price').textContent = `$${avgPrice}`;
+            document.getElementById('volatility').textContent = `$${volatility}`;
+        }
+
+        if (this.data.performance && this.data.performance.success) {
+            const bestModel = this.data.performance.best_model.toUpperCase();
+            document.getElementById('best-model').textContent = bestModel;
+        }
+    }
+
+    calculateStandardDeviation(values) {
+        const mean = values.reduce((a, b) => a + b) / values.length;
+        const squaredDiffs = values.map(value => Math.pow(value - mean, 2));
+        const avgSquaredDiff = squaredDiffs.reduce((a, b) => a + b) / squaredDiffs.length;
+        return Math.sqrt(avgSquaredDiff);
+    }
+
+    renderCharts() {
+        this.renderPriceTrendsChart();
+        this.renderSeasonalCharts();
+        this.renderPerformanceCharts();
+        this.renderStatisticalCharts();
+    }
+
+    renderPriceTrendsChart() {
+        if (!this.data.historical || !this.data.historical.success) return;
+        
+        const data = this.data.historical.data;
+        
+        const trace = {
+            x: data.map(d => d.date),
+            y: data.map(d => d.price),
+            type: 'scatter',
+            mode: 'lines+markers',
+            name: 'OCC Price',
+            line: {
+                color: '#3b82f6',
+                width: 3
+            },
+            marker: {
+                color: '#8b5cf6',
+                size: 6
+            }
+        };
+
+        const layout = {
+            title: {
+                text: 'OCC Price Historical Trends',
+                font: { size: 18, color: '#f8fafc' }
+            },
+            xaxis: {
+                title: 'Date',
+                color: '#94a3b8',
+                gridcolor: '#374151'
+            },
+            yaxis: {
+                title: 'Price (USD/ton)',
+                color: '#94a3b8',
+                gridcolor: '#374151'
+            },
+            plot_bgcolor: 'rgba(0,0,0,0)',
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            font: { color: '#f8fafc' }
+        };
+
+        Plotly.newPlot('price-trends-chart', [trace], layout, {responsive: true});
+    }
+
+    renderSeasonalCharts() {
+        if (!this.data.historical || !this.data.historical.success) return;
+        
+        const data = this.data.historical.data;
+        const prices = data.map(d => d.price);
+        
+        // Seasonal chart (placeholder)
+        const seasonalTrace = {
+            x: data.map(d => d.date),
+            y: prices,
+            type: 'scatter',
+            mode: 'lines',
+            name: 'Seasonal Pattern',
+            line: { color: '#ec4899' }
+        };
+
+        const seasonalLayout = {
+            title: { text: 'Seasonal Patterns', font: { color: '#f8fafc' } },
+            plot_bgcolor: 'rgba(0,0,0,0)',
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            font: { color: '#f8fafc' },
+            xaxis: { color: '#94a3b8', gridcolor: '#374151' },
+            yaxis: { color: '#94a3b8', gridcolor: '#374151' }
+        };
+
+        Plotly.newPlot('seasonal-chart', [seasonalTrace], seasonalLayout, {responsive: true});
+
+        // Distribution chart
+        const distributionTrace = {
+            x: prices,
+            type: 'histogram',
+            name: 'Price Distribution',
+            marker: { color: '#10b981', opacity: 0.7 }
+        };
+
+        const distributionLayout = {
+            title: { text: 'Price Distribution', font: { color: '#f8fafc' } },
+            plot_bgcolor: 'rgba(0,0,0,0)',
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            font: { color: '#f8fafc' },
+            xaxis: { title: 'Price (USD/ton)', color: '#94a3b8', gridcolor: '#374151' },
+            yaxis: { title: 'Frequency', color: '#94a3b8', gridcolor: '#374151' }
+        };
+
+        Plotly.newPlot('distribution-chart', [distributionTrace], distributionLayout, {responsive: true});
+    }
+
+    renderPerformanceCharts() {
+        if (!this.data.performance || !this.data.performance.success) return;
+        
+        const models = this.data.performance.models;
+        const modelNames = Object.keys(models);
+        const rmseValues = modelNames.map(name => models[name].rmse);
+
+        const trace = {
+            x: modelNames,
+            y: rmseValues,
+            type: 'bar',
+            marker: {
+                color: ['#3b82f6', '#8b5cf6', '#ec4899', '#10b981', '#f59e0b'],
+                opacity: 0.8
+            }
+        };
+
+        const layout = {
+            title: {
+                text: 'Model Performance Comparison (RMSE)',
+                font: { size: 18, color: '#f8fafc' }
+            },
+            xaxis: { title: 'Models', color: '#94a3b8', gridcolor: '#374151' },
+            yaxis: { title: 'RMSE', color: '#94a3b8', gridcolor: '#374151' },
+            plot_bgcolor: 'rgba(0,0,0,0)',
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            font: { color: '#f8fafc' }
+        };
+
+        Plotly.newPlot('model-comparison-chart', [trace], layout, {responsive: true});
+
+        // Update performance table
+        this.updatePerformanceTable();
+    }
+
+    updatePerformanceTable() {
+        if (!this.data.performance || !this.data.performance.success) return;
+        
+        const models = this.data.performance.models;
+        const bestModel = this.data.performance.best_model;
+        const tbody = document.getElementById('performance-metrics-body');
+        
+        tbody.innerHTML = '';
+        
+        Object.entries(models).forEach(([name, metrics]) => {
+            const row = document.createElement('tr');
+            if (name === bestModel) {
+                row.classList.add('best-model');
+            }
+            
+            row.innerHTML = `
+                <td style="font-weight: 600;">${name.toUpperCase()}</td>
+                <td>${metrics.rmse.toFixed(2)}</td>
+                <td>${metrics.mae.toFixed(2)}</td>
+                <td>${metrics.mape.toFixed(2)}%</td>
+                <td>${metrics.r2.toFixed(3)}</td>
+                <td>${metrics.training_time.toFixed(2)}s</td>
+            `;
+            
+            tbody.appendChild(row);
+        });
+    }
+
+    renderStatisticalCharts() {
+        const chartIds = ['autocorr-chart', 'moving-avg-chart', 'volatility-chart', 'summary-stats-chart'];
+        const titles = ['Autocorrelation Function', 'Moving Averages', 'Volatility Analysis', 'Statistical Summary'];
+        
+        chartIds.forEach((chartId, index) => {
+            const layout = {
+                title: { text: titles[index], font: { size: 14, color: '#f8fafc' } },
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                font: { color: '#f8fafc' },
+                xaxis: { color: '#94a3b8', gridcolor: '#374151' },
+                yaxis: { color: '#94a3b8', gridcolor: '#374151' }
+            };
+            
+            // Placeholder data
+            const trace = {
+                x: [1, 2, 3, 4, 5],
+                y: [1, 4, 2, 8, 5],
+                type: 'scatter',
+                mode: 'lines+markers',
+                marker: { color: '#3b82f6' }
+            };
+            
+            Plotly.newPlot(chartId, [trace], layout, {responsive: true});
+        });
+    }
+
+    showError(message) {
+        document.querySelectorAll('.loading').forEach(loading => {
+            loading.innerHTML = `<i class="fas fa-exclamation-triangle" style="color: #ef4444; margin-right: 0.5rem;"></i>${message}`;
+        });
+    }
+}
+
+// Tab switching function
+function switchTab(tabName) {
+    // Remove active classes
+    document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+    
+    // Add active class to clicked tab and corresponding content
+    event.target.classList.add('active');
+    document.getElementById(tabName + '-content').classList.add('active');
+}
+
+// Action functions
+function refreshAnalytics() {
+    if (window.analytics) {
+        window.analytics.init();
+    }
+}
+
+function exportData() {
+    if (window.analytics && window.analytics.data) {
+        const data = JSON.stringify(window.analytics.data, null, 2);
+        const blob = new Blob([data], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `occ-analytics-${new Date().toISOString().split('T')[0]}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+}
+
+// Initialize when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    window.analytics = new ProfessionalAnalytics();
+});
+</script>
+{% endblock %}

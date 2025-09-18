@@ -1,0 +1,1068 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics Dashboard - OCC Price Forecasting{% endblock %}
+
+{% block head %}
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+<style>
+/* PREMIUM ANALYTICS DASHBOARD - INSPIRED BY DATAROBOT & AWS SAGEMAKER */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+/* GLASSMORPHISM HEADER */
+.analytics-hero {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 3rem 0;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.analytics-hero::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+    opacity: 0.3;
+}
+
+.analytics-hero h1 {
+    font-size: 3.5rem;
+    font-weight: 800;
+    background: linear-gradient(45deg, #fff, #f0f8ff);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 1rem;
+    position: relative;
+    z-index: 1;
+}
+
+.analytics-hero p {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 1.3rem;
+    font-weight: 400;
+    position: relative;
+    z-index: 1;
+}
+
+/* PREMIUM WIDGET DASHBOARD */
+.dashboard-container {
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.widgets-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 2rem;
+    margin-bottom: 3rem;
+}
+
+.premium-widget {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border-radius: 24px;
+    padding: 2.5rem;
+    box-shadow: 
+        0 20px 40px rgba(0, 0, 0, 0.1),
+        0 8px 16px rgba(0, 0, 0, 0.06),
+        inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+}
+
+.premium-widget::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 5px;
+    background: linear-gradient(90deg, #667eea, #764ba2, #f093fb, #f5576c);
+    background-size: 300% 100%;
+    animation: gradientShift 3s ease infinite;
+}
+
+@keyframes gradientShift {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+}
+
+.premium-widget:hover {
+    transform: translateY(-12px) scale(1.02);
+    box-shadow: 
+        0 35px 60px rgba(0, 0, 0, 0.15),
+        0 15px 30px rgba(0, 0, 0, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.widget-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.widget-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1.5rem;
+    box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+    position: relative;
+}
+
+.widget-icon::after {
+    content: '';
+    position: absolute;
+    inset: 2px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.2), transparent);
+}
+
+.widget-icon i {
+    color: white;
+    font-size: 1.8rem;
+    position: relative;
+    z-index: 1;
+}
+
+.widget-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin: 0;
+}
+
+.widget-value {
+    font-size: 3rem;
+    font-weight: 900;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    line-height: 1.1;
+    margin: 1rem 0;
+    position: relative;
+}
+
+.widget-subtitle {
+    font-size: 1rem;
+    color: #94a3b8;
+    font-weight: 500;
+    margin-top: 0.5rem;
+}
+
+.widget-trend {
+    display: flex;
+    align-items: center;
+    margin-top: 1rem;
+    padding: 0.75rem 1rem;
+    background: rgba(72, 187, 120, 0.1);
+    border-radius: 12px;
+    border: 1px solid rgba(72, 187, 120, 0.2);
+}
+
+.widget-trend.negative {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.2);
+}
+
+.widget-trend i {
+    margin-right: 0.5rem;
+    color: #48bb78;
+}
+
+.widget-trend.negative i {
+    color: #ef4444;
+}
+
+.widget-trend span {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #48bb78;
+}
+
+.widget-trend.negative span {
+    color: #ef4444;
+}
+
+/* FUTURISTIC TAB SYSTEM */
+.analytics-navigation {
+    margin-bottom: 3rem;
+    display: flex;
+    justify-content: center;
+}
+
+.nav-container {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20px);
+    border-radius: 20px;
+    padding: 0.75rem;
+    display: flex;
+    gap: 0.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    flex-wrap: wrap;
+}
+
+.nav-tab {
+    padding: 1rem 2rem;
+    border: none;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 600;
+    font-size: 1rem;
+    border-radius: 14px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.nav-tab::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+    transition: left 0.5s;
+}
+
+.nav-tab:hover::before {
+    left: 100%;
+}
+
+.nav-tab:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    transform: translateY(-2px);
+}
+
+.nav-tab.active {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+/* PREMIUM CONTENT PANELS */
+.content-panel {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border-radius: 28px;
+    padding: 3rem;
+    box-shadow: 
+        0 25px 50px rgba(0, 0, 0, 0.1),
+        0 10px 20px rgba(0, 0, 0, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    min-height: 600px;
+}
+
+.tab-pane {
+    display: none;
+}
+
+.tab-pane.active {
+    display: block;
+    animation: fadeInUp 0.5s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* CHART CONTAINERS */
+.chart-section {
+    margin-bottom: 3rem;
+}
+
+.chart-container {
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(15px);
+    border-radius: 24px;
+    padding: 2.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 
+        0 15px 35px rgba(0, 0, 0, 0.08),
+        0 5px 15px rgba(0, 0, 0, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.chart-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #667eea, #764ba2);
+}
+
+.chart-container:hover {
+    transform: translateY(-6px);
+    box-shadow: 
+        0 25px 50px rgba(0, 0, 0, 0.12),
+        0 10px 25px rgba(0, 0, 0, 0.08);
+}
+
+.chart-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #f1f5f9;
+}
+
+.chart-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.chart-title::before {
+    content: '';
+    width: 6px;
+    height: 24px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 3px;
+}
+
+.chart-wrapper {
+    height: 480px;
+    position: relative;
+    border-radius: 16px;
+    overflow: hidden;
+    background: linear-gradient(145deg, #f8fafc, #f1f5f9);
+}
+
+.chart-wrapper.small {
+    height: 350px;
+}
+
+.charts-grid {
+    display: grid;
+    gap: 2rem;
+}
+
+.charts-grid.two-cols {
+    grid-template-columns: 1fr 1fr;
+}
+
+.charts-grid.four-grid {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+}
+
+/* ACTION BUTTONS */
+.action-bar {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+}
+
+.action-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 1rem 2.5rem;
+    border-radius: 16px;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.action-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.5s;
+}
+
+.action-btn:hover::before {
+    left: 100%;
+}
+
+.action-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 20px 40px rgba(102, 126, 234, 0.4);
+}
+
+/* PREMIUM TABLE */
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 2rem;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.08);
+    backdrop-filter: blur(10px);
+}
+
+.data-table th,
+.data-table td {
+    padding: 1.5rem 2rem;
+    text-align: left;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.5);
+}
+
+.data-table th {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-weight: 700;
+    font-size: 0.95rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.data-table tr {
+    transition: all 0.3s ease;
+}
+
+.data-table tr:hover {
+    background: rgba(102, 126, 234, 0.05);
+    transform: scale(1.01);
+}
+
+.data-table .highlight {
+    background: linear-gradient(135deg, rgba(72, 187, 120, 0.1), rgba(56, 178, 172, 0.1));
+    font-weight: 700;
+    color: #2d3748;
+    box-shadow: inset 6px 0 0 #48bb78;
+}
+
+/* RESPONSIVE DESIGN */
+@media (max-width: 1200px) {
+    .charts-grid.two-cols {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .charts-grid.four-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .widgets-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .analytics-hero h1 {
+        font-size: 2.5rem;
+    }
+
+    .nav-container {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .nav-tab {
+        margin: 0.25rem 0;
+    }
+}
+
+/* LOADING STATES */
+@keyframes shimmer {
+    0% { background-position: -200px 0; }
+    100% { background-position: calc(200px + 100%) 0; }
+}
+
+.loading {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200px 100%;
+    animation: shimmer 1.5s infinite;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- PREMIUM ANALYTICS HERO SECTION -->
+<div class="analytics-hero">
+    <h1><i class="fas fa-chart-line" style="margin-right: 1rem;"></i>Analytics Dashboard</h1>
+    <p>Advanced ML-Powered Price Forecasting Intelligence</p>
+</div>
+
+<!-- PREMIUM WIDGETS DASHBOARD -->
+<div class="dashboard-container">
+    <!-- Key Metrics Widgets -->
+    <div class="widgets-grid">
+        <!-- Data Points Widget -->
+        <div class="premium-widget">
+            <div class="widget-header">
+                <div class="widget-icon">
+                    <i class="fas fa-database"></i>
+                </div>
+                <div>
+                    <h3 class="widget-title">Data Points</h3>
+                </div>
+            </div>
+            <div class="widget-value" id="data-points-value">105</div>
+            <p class="widget-subtitle">Historical market data points</p>
+            <div class="widget-trend">
+                <i class="fas fa-arrow-up"></i>
+                <span>9 years of comprehensive data</span>
+            </div>
+        </div>
+
+        <!-- Average Price Widget -->
+        <div class="premium-widget">
+            <div class="widget-header">
+                <div class="widget-icon">
+                    <i class="fas fa-dollar-sign"></i>
+                </div>
+                <div>
+                    <h3 class="widget-title">Average Price</h3>
+                </div>
+            </div>
+            <div class="widget-value" id="avg-price-value">$144</div>
+            <p class="widget-subtitle">Per ton USD</p>
+            <div class="widget-trend">
+                <i class="fas fa-chart-line"></i>
+                <span>Market stability indicator</span>
+            </div>
+        </div>
+
+        <!-- Volatility Widget -->
+        <div class="premium-widget">
+            <div class="widget-header">
+                <div class="widget-icon">
+                    <i class="fas fa-wave-square"></i>
+                </div>
+                <div>
+                    <h3 class="widget-title">Price Volatility</h3>
+                </div>
+            </div>
+            <div class="widget-value" id="volatility-value">$48</div>
+            <p class="widget-subtitle">Standard deviation</p>
+            <div class="widget-trend negative">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span>Risk assessment metric</span>
+            </div>
+        </div>
+
+        <!-- Best Model Widget -->
+        <div class="premium-widget">
+            <div class="widget-header">
+                <div class="widget-icon">
+                    <i class="fas fa-brain"></i>
+                </div>
+                <div>
+                    <h3 class="widget-title">Best Model</h3>
+                </div>
+            </div>
+            <div class="widget-value" id="best-model-value">PROPHET</div>
+            <p class="widget-subtitle">AI/ML Algorithm</p>
+            <div class="widget-trend">
+                <i class="fas fa-medal"></i>
+                <span>5 models trained & optimized</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Premium Navigation Tabs -->
+    <div class="analytics-navigation">
+        <div class="nav-container">
+            <button class="nav-tab active" onclick="switchTab('trends')">
+                <i class="fas fa-chart-line" style="margin-right: 0.5rem;"></i>Price Trends
+            </button>
+            <button class="nav-tab" onclick="switchTab('seasonal')">
+                <i class="fas fa-calendar-alt" style="margin-right: 0.5rem;"></i>Seasonal Analysis
+            </button>
+            <button class="nav-tab" onclick="switchTab('performance')">
+                <i class="fas fa-trophy" style="margin-right: 0.5rem;"></i>Model Performance
+            </button>
+            <button class="nav-tab" onclick="switchTab('statistics')">
+                <i class="fas fa-calculator" style="margin-right: 0.5rem;"></i>Statistical Analysis
+            </button>
+        </div>
+    </div>
+
+    <!-- Premium Content Panels -->
+    <div class="content-panel">
+        <!-- Price Trends Tab -->
+        <div id="trends-pane" class="tab-pane active">
+            <div class="action-bar">
+                <button class="action-btn" onclick="refreshAnalytics()">
+                    <i class="fas fa-sync-alt" style="margin-right: 0.5rem;"></i>Refresh Data
+                </button>
+                <button class="action-btn" onclick="exportData()">
+                    <i class="fas fa-download" style="margin-right: 0.5rem;"></i>Export Analysis
+                </button>
+            </div>
+            
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h3 class="chart-title">Historical Price Trends</h3>
+                </div>
+                <div class="chart-wrapper" id="trends-chart"></div>
+            </div>
+        </div>
+
+        <!-- Seasonal Analysis Tab -->
+        <div id="seasonal-pane" class="tab-pane">
+            <div class="charts-grid two-cols">
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Seasonal Patterns</h3>
+                    </div>
+                    <div class="chart-wrapper" id="seasonal-chart"></div>
+                </div>
+                
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Price Distribution</h3>
+                    </div>
+                    <div class="chart-wrapper" id="distribution-chart"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Model Performance Tab -->
+        <div id="performance-pane" class="tab-pane">
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h3 class="chart-title">Model Accuracy Comparison</h3>
+                </div>
+                <div class="chart-wrapper" id="performance-chart"></div>
+            </div>
+
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h3 class="chart-title">Detailed Model Metrics</h3>
+                </div>
+                <table class="data-table" id="performance-table">
+                    <thead>
+                        <tr>
+                            <th>Model</th>
+                            <th>RMSE</th>
+                            <th>MAE</th>
+                            <th>MAPE</th>
+                            <th>R² Score</th>
+                            <th>Training Time</th>
+                        </tr>
+                    </thead>
+                    <tbody id="performance-table-body">
+                        <!-- Dynamic content -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Statistical Analysis Tab -->
+        <div id="statistics-pane" class="tab-pane">
+            <div class="charts-grid four-grid">
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Autocorrelation</h3>
+                    </div>
+                    <div class="chart-wrapper small" id="autocorr-chart"></div>
+                </div>
+                
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Moving Averages</h3>
+                    </div>
+                    <div class="chart-wrapper small" id="moving-avg-chart"></div>
+                </div>
+                
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Price Volatility</h3>
+                    </div>
+                    <div class="chart-wrapper small" id="volatility-chart"></div>
+                </div>
+                
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Statistical Summary</h3>
+                    </div>
+                    <div class="chart-wrapper small" id="summary-chart"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Premium JavaScript for Analytics -->
+<script src="https://cdn.plot.ly/plotly-2.24.1.min.js"></script>
+<script>
+// Premium Analytics Dashboard JavaScript
+class AnalyticsDashboard {
+    constructor() {
+        this.currentTab = 'trends';
+        this.init();
+    }
+
+    init() {
+        this.loadDashboardData();
+        this.setupEventListeners();
+        this.startRealTimeUpdates();
+    }
+
+    async loadDashboardData() {
+        try {
+            // Load historical data
+            const historicalResponse = await fetch('/api/historical_data');
+            this.historicalData = await historicalResponse.json();
+            
+            // Load model performance
+            const performanceResponse = await fetch('/api/model_performance');
+            this.performanceData = await performanceResponse.json();
+            
+            // Update widgets with real data
+            this.updateWidgets();
+            
+            // Initialize charts for current tab
+            this.renderCurrentTab();
+            
+        } catch (error) {
+            console.error('Error loading dashboard data:', error);
+            this.showErrorState();
+        }
+    }
+
+    updateWidgets() {
+        if (this.historicalData && this.historicalData.success) {
+            const data = this.historicalData.data;
+            const prices = data.map(d => d.price);
+            
+            // Calculate metrics
+            const avgPrice = Math.round(prices.reduce((a, b) => a + b, 0) / prices.length);
+            const volatility = Math.round(this.calculateStandardDeviation(prices));
+            
+            // Update widget values with animation
+            this.animateValue('data-points-value', data.length);
+            this.animateValue('avg-price-value', `$${avgPrice}`, false);
+            this.animateValue('volatility-value', `$${volatility}`, false);
+        }
+
+        if (this.performanceData && this.performanceData.success) {
+            const bestModel = this.performanceData.best_model.toUpperCase();
+            document.getElementById('best-model-value').textContent = bestModel;
+        }
+    }
+
+    animateValue(elementId, endValue, isNumber = true) {
+        const element = document.getElementById(elementId);
+        const startValue = isNumber ? 0 : element.textContent;
+        const duration = 2000;
+        const increment = isNumber ? endValue / (duration / 16) : 1;
+        
+        if (isNumber) {
+            let currentValue = 0;
+            const timer = setInterval(() => {
+                currentValue += increment;
+                if (currentValue >= endValue) {
+                    element.textContent = endValue;
+                    clearInterval(timer);
+                } else {
+                    element.textContent = Math.floor(currentValue);
+                }
+            }, 16);
+        } else {
+            element.textContent = endValue;
+        }
+    }
+
+    calculateStandardDeviation(values) {
+        const mean = values.reduce((a, b) => a + b) / values.length;
+        const squaredDiffs = values.map(value => Math.pow(value - mean, 2));
+        const avgSquaredDiff = squaredDiffs.reduce((a, b) => a + b) / squaredDiffs.length;
+        return Math.sqrt(avgSquaredDiff);
+    }
+
+    setupEventListeners() {
+        // Tab switching is handled by global switchTab function
+        
+        // Refresh button
+        window.refreshAnalytics = () => {
+            this.showLoadingState();
+            this.loadDashboardData();
+        };
+        
+        // Export button
+        window.exportData = () => {
+            this.exportAnalyticsData();
+        };
+    }
+
+    renderCurrentTab() {
+        switch(this.currentTab) {
+            case 'trends':
+                this.renderTrendsChart();
+                break;
+            case 'seasonal':
+                this.renderSeasonalCharts();
+                break;
+            case 'performance':
+                this.renderPerformanceCharts();
+                break;
+            case 'statistics':
+                this.renderStatisticalCharts();
+                break;
+        }
+    }
+
+    renderTrendsChart() {
+        if (!this.historicalData || !this.historicalData.success) return;
+        
+        const data = this.historicalData.data;
+        const trace = {
+            x: data.map(d => d.date),
+            y: data.map(d => d.price),
+            type: 'scatter',
+            mode: 'lines+markers',
+            name: 'OCC Price',
+            line: {
+                color: '#667eea',
+                width: 3,
+                shape: 'spline'
+            },
+            marker: {
+                color: '#764ba2',
+                size: 6,
+                symbol: 'circle'
+            }
+        };
+
+        const layout = {
+            title: {
+                text: 'Historical OCC Price Trends',
+                font: { size: 20, color: '#1e293b' }
+            },
+            xaxis: {
+                title: 'Date',
+                gridcolor: '#e2e8f0'
+            },
+            yaxis: {
+                title: 'Price (USD/ton)',
+                gridcolor: '#e2e8f0'
+            },
+            plot_bgcolor: 'rgba(0,0,0,0)',
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            font: { color: '#1e293b' }
+        };
+
+        Plotly.newPlot('trends-chart', [trace], layout, {responsive: true});
+    }
+
+    renderSeasonalCharts() {
+        // Placeholder for seasonal analysis
+        this.renderTrendsChart(); // Temporary
+        
+        // Distribution chart
+        if (this.historicalData && this.historicalData.success) {
+            const prices = this.historicalData.data.map(d => d.price);
+            
+            const trace = {
+                x: prices,
+                type: 'histogram',
+                name: 'Price Distribution',
+                marker: {
+                    color: '#667eea',
+                    opacity: 0.7
+                }
+            };
+
+            const layout = {
+                title: {
+                    text: 'Price Distribution',
+                    font: { size: 18, color: '#1e293b' }
+                },
+                xaxis: { title: 'Price (USD/ton)' },
+                yaxis: { title: 'Frequency' },
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                paper_bgcolor: 'rgba(0,0,0,0)'
+            };
+
+            Plotly.newPlot('distribution-chart', [trace], layout, {responsive: true});
+        }
+    }
+
+    renderPerformanceCharts() {
+        if (!this.performanceData || !this.performanceData.success) return;
+        
+        const models = this.performanceData.models;
+        const modelNames = Object.keys(models);
+        const rmseValues = modelNames.map(name => models[name].rmse);
+
+        const trace = {
+            x: modelNames,
+            y: rmseValues,
+            type: 'bar',
+            marker: {
+                color: ['#667eea', '#764ba2', '#f093fb', '#f5576c', '#4ecdc4'],
+                opacity: 0.8
+            }
+        };
+
+        const layout = {
+            title: {
+                text: 'Model Performance Comparison (RMSE)',
+                font: { size: 18, color: '#1e293b' }
+            },
+            xaxis: { title: 'Models' },
+            yaxis: { title: 'RMSE' },
+            plot_bgcolor: 'rgba(0,0,0,0)',
+            paper_bgcolor: 'rgba(0,0,0,0)'
+        };
+
+        Plotly.newPlot('performance-chart', [trace], layout, {responsive: true});
+
+        // Update performance table
+        this.updatePerformanceTable();
+    }
+
+    updatePerformanceTable() {
+        if (!this.performanceData || !this.performanceData.success) return;
+        
+        const models = this.performanceData.models;
+        const bestModel = this.performanceData.best_model;
+        const tbody = document.getElementById('performance-table-body');
+        
+        tbody.innerHTML = '';
+        
+        Object.entries(models).forEach(([name, metrics]) => {
+            const row = document.createElement('tr');
+            if (name === bestModel) {
+                row.classList.add('highlight');
+            }
+            
+            row.innerHTML = `
+                <td style="font-weight: 600;">${name.toUpperCase()}</td>
+                <td>${metrics.rmse.toFixed(2)}</td>
+                <td>${metrics.mae.toFixed(2)}</td>
+                <td>${metrics.mape.toFixed(2)}%</td>
+                <td>${metrics.r2.toFixed(3)}</td>
+                <td>${metrics.training_time.toFixed(2)}s</td>
+            `;
+            
+            tbody.appendChild(row);
+        });
+    }
+
+    renderStatisticalCharts() {
+        // Placeholder statistical charts
+        const chartIds = ['autocorr-chart', 'moving-avg-chart', 'volatility-chart', 'summary-chart'];
+        
+        chartIds.forEach(chartId => {
+            const layout = {
+                title: {
+                    text: chartId.replace('-chart', '').replace('-', ' ').toUpperCase(),
+                    font: { size: 16, color: '#1e293b' }
+                },
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                paper_bgcolor: 'rgba(0,0,0,0)'
+            };
+            
+            Plotly.newPlot(chartId, [], layout, {responsive: true});
+        });
+    }
+
+    showLoadingState() {
+        document.querySelectorAll('.chart-wrapper').forEach(chart => {
+            chart.classList.add('loading');
+        });
+    }
+
+    showErrorState() {
+        console.error('Failed to load analytics data');
+    }
+
+    exportAnalyticsData() {
+        const data = {
+            historical: this.historicalData,
+            performance: this.performanceData,
+            timestamp: new Date().toISOString()
+        };
+        
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `occ-analytics-${new Date().toISOString().split('T')[0]}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    startRealTimeUpdates() {
+        // Update every 5 minutes
+        setInterval(() => {
+            this.loadDashboardData();
+        }, 300000);
+    }
+}
+
+// Global tab switching function
+function switchTab(tabName) {
+    // Remove active class from all tabs and panes
+    document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
+    document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+    
+    // Add active class to clicked tab and corresponding pane
+    event.target.classList.add('active');
+    document.getElementById(tabName + '-pane').classList.add('active');
+    
+    // Update dashboard current tab and render
+    if (window.dashboard) {
+        window.dashboard.currentTab = tabName;
+        window.dashboard.renderCurrentTab();
+    }
+}
+
+// Initialize dashboard when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    window.dashboard = new AnalyticsDashboard();
+});
+</script>
+{% endblock %}

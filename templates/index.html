@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Dashboard - OCC Price Forecasting{% endblock %}
+{% block title %}Home - AI-ML based OCC_FOB Price Forecasting{% endblock %}
 
 {% block content %}
 <!-- Hero Section -->
@@ -10,7 +10,7 @@
             <div class="card-body text-center">
                 <h1 class="display-4 mb-3">
                     <i class="fas fa-chart-line me-3"></i>
-                    OCC Price Forecasting Dashboard
+                    AI-ML based OCC_FOB Price Forecasting
                 </h1>
                 <p class="lead">Advanced machine learning-powered forecasting for Old Corrugated Cardboard prices</p>
                 <div class="row mt-4">
@@ -74,10 +74,10 @@
                 <div class="feature-icon">
                     <i class="fas fa-chart-bar"></i>
                 </div>
-                <h5 class="card-title">View Analytics</h5>
-                <p class="card-text">Explore detailed analytics, trends, and model performance metrics.</p>
-                <a href="{{ url_for('analytics') }}" class="btn btn-primary">
-                    <i class="fas fa-search me-2"></i>Explore Analytics
+                <h5 class="card-title">Advanced Forecasting</h5>
+                <p class="card-text">Generate accurate price forecasts using state-of-the-art machine learning models.</p>
+                <a href="{{ url_for('forecast') }}" class="btn btn-primary">
+                    <i class="fas fa-crystal-ball me-2"></i>Generate Forecast
                 </a>
             </div>
         </div>

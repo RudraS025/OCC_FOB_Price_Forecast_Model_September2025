@@ -200,38 +200,40 @@ def update_data():
         logger.error(f"Error loading update_data page: {e}")
         return render_template('error.html', error=str(e)), 500
 
-@app.route('/analytics')
-def analytics():
-    """Modern Analytics Intelligence Center"""
-    try:
-        # Get model performance data
-        model_info = forecasting_engine.get_model_info()
-        
-        # Get data validation results
-        data_validation = data_manager.validate_data()
-        
-        # Get data summary
-        data_summary = data_manager.get_data_summary()
-        
-        return render_template('analytics.html', 
-                             model_info=model_info,
-                             data_validation=data_validation,
-                             data_summary=data_summary)
-    except Exception as e:
-        logger.error(f"Error in analytics route: {e}")
-        return render_template('error.html', error=str(e)), 500
-
 @app.route('/api/historical_data')
 def api_historical_data():
     """API endpoint for historical data"""
     try:
         data = data_manager.get_data()
-        # Convert to JSON-serializable format
-        data_copy = data.copy()
-        data_copy['Month'] = data_copy['Month'].dt.strftime('%Y-%m-%d')
-        return jsonify(data_copy.to_dict('records'))
+        # Convert to format expected by JavaScript
+        dates = data['Month'].dt.strftime('%Y-%m-%d').tolist()
+        prices = data['Price(USD/ton)'].tolist()
+        
+        return jsonify({
+            'dates': dates,
+            'prices': prices,
+            'data_points': len(dates)
+        })
     except Exception as e:
         logger.error(f"Error in historical_data API: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/table_data')
+def api_table_data():
+    """API endpoint for table display - returns data in old format for Update Data page"""
+    try:
+        data = data_manager.get_data()
+        # Convert to the format expected by the Update Data table
+        table_data = []
+        for index, row in data.iterrows():
+            table_data.append({
+                'Month': row['Month'].strftime('%Y-%m-%d'),
+                'Price(USD/ton)': float(row['Price(USD/ton)'])
+            })
+        
+        return jsonify(table_data)
+    except Exception as e:
+        logger.error(f"Error in table_data API: {e}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/model_performance')
@@ -239,7 +241,26 @@ def api_model_performance():
     """API endpoint for model performance metrics"""
     try:
         performance_data = forecasting_engine.get_model_info()
-        return jsonify(performance_data)
+        
+        # Format for JavaScript consumption
+        formatted_data = {
+            'models': {},
+            'best_model': performance_data.get('best_model', 'prophet')
+        }
+        
+        # Extract model metrics
+        if 'models' in performance_data:
+            for model_name, model_data in performance_data['models'].items():
+                if isinstance(model_data, dict) and 'performance' in model_data:
+                    perf = model_data['performance']
+                    formatted_data['models'][model_name] = {
+                        'rmse': float(perf.get('rmse', 0)),
+                        'mae': float(perf.get('mae', 0)),
+                        'mape': float(perf.get('mape', 0)),
+                        'r2': float(perf.get('r2', 0))
+                    }
+        
+        return jsonify(formatted_data)
     except Exception as e:
         logger.error(f"Error in model_performance API: {e}")
         return jsonify({'error': str(e)}), 500

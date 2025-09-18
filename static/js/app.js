@@ -56,7 +56,7 @@ const OCCApp = {
     detectCurrentPage: function() {
         const path = window.location.pathname;
         if (path === '/' || path === '/index') {
-            this.state.currentPage = 'dashboard';
+            this.state.currentPage = 'home';
         } else if (path === '/forecast') {
             this.state.currentPage = 'forecast';
         } else if (path === '/update_data') {
@@ -479,7 +479,7 @@ const OCCApp = {
 
 // Page-specific functionality
 const PageModules = {
-    dashboard: {
+    home: {
         init: function() {
             this.setupQuickActions();
             this.loadRecentData();

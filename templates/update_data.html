@@ -360,7 +360,7 @@ function validateData() {
 
 function exportData() {
     // Create a download link for the current data
-    fetch('/api/historical_data')
+    fetch('/api/table_data')
     .then(response => response.json())
     .then(data => {
         const csv = convertToCSV(data);
@@ -393,7 +393,7 @@ function convertToCSV(data) {
 }
 
 function loadRecentData() {
-    fetch('/api/historical_data')
+    fetch('/api/table_data')
     .then(response => response.json())
     .then(data => {
         const recentData = data.slice(-10); // Last 10 records
@@ -429,6 +429,8 @@ function loadRecentData() {
     })
     .catch(error => {
         console.error('Error loading recent data:', error);
+        const tableBody = document.getElementById('recent-data-table');
+        tableBody.innerHTML = '<tr><td colspan="4" class="text-center text-danger">Error loading data: ' + error.message + '</td></tr>';
     });
 }
 
