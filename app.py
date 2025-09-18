@@ -192,7 +192,10 @@ def update_data():
     try:
         recent_data = data_manager.get_data().tail(10)
         recent_data_json = recent_data.to_dict('records')
-        return render_template('update_data.html', recent_data=recent_data_json)
+        data_summary = data_manager.get_data_summary()
+        return render_template('update_data.html', 
+                             recent_data=recent_data_json,
+                             data_summary=data_summary)
     except Exception as e:
         logger.error(f"Error loading update_data page: {e}")
         return render_template('error.html', error=str(e)), 500
@@ -207,9 +210,29 @@ def analytics():
         # Get data validation results
         data_validation = data_manager.validate_data()
         
+        # Get data summary
+        data_summary = data_manager.get_data_summary()
+        
+        # Get historical data for charts
+        historical_data = data_manager.get_data()
+        
+        # Import visualization engine
+        from visualization_engine import VisualizationEngine
+        viz_engine = VisualizationEngine()
+        
+        # Generate analytics charts
+        charts = {
+            'price_trend': viz_engine.create_price_trend_chart(historical_data),
+            'seasonal_analysis': viz_engine.create_seasonal_analysis(historical_data),
+            'model_performance': viz_engine.create_model_performance_chart(model_info),
+            'data_statistics': viz_engine.create_statistics_dashboard(data_summary)
+        }
+        
         return render_template('analytics.html', 
                              model_info=model_info,
-                             data_validation=data_validation)
+                             data_validation=data_validation,
+                             data_summary=data_summary,
+                             charts=charts)
     except Exception as e:
         logger.error(f"Error in analytics route: {e}")
         return render_template('error.html', error=str(e)), 500
@@ -235,6 +258,16 @@ def api_model_performance():
         return jsonify(performance_data)
     except Exception as e:
         logger.error(f"Error in model_performance API: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/data_summary')
+def api_data_summary():
+    """API endpoint for data summary"""
+    try:
+        data_summary = data_manager.get_data_summary()
+        return jsonify(data_summary)
+    except Exception as e:
+        logger.error(f"Error in data_summary API: {e}")
         return jsonify({'error': str(e)}), 500
 
 @app.errorhandler(404)

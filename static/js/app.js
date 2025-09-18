@@ -543,9 +543,11 @@ const PageModules = {
         },
         
         setupForecastForm: function() {
+            // Form handling is done in the template's script section
+            // This is to avoid conflicts between multiple event listeners
             const form = document.getElementById('forecast-form');
             if (form) {
-                form.addEventListener('submit', this.handleForecastSubmit.bind(this));
+                console.log('Forecast form found - handling in template script');
             }
         },
         

@@ -233,13 +233,8 @@ function displayForecastResults(data) {
                     </div>
                 </div>
                 
-                <!-- Chart Container -->
-                <div class="chart-container">
-                    ${data.chart_html || '<p>Chart not available</p>'}
-                </div>
-                
                 <!-- Detailed Forecast Table -->
-                <div class="table-responsive">
+                <div class="table-responsive mb-4">
                     <table class="table table-striped">
                         <thead>
                             <tr>
@@ -271,6 +266,23 @@ function displayForecastResults(data) {
                     </table>
                 </div>
                 
+                <!-- Dynamic Chart Container -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h6 class="mb-0"><i class="fas fa-chart-line me-2"></i>Historical vs Forecasted Prices</h6>
+                    </div>
+                    <div class="card-body">
+                        <div id="forecast-chart" style="height: 400px;">
+                            <div class="text-center">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading chart...</span>
+                                </div>
+                                <p class="mt-2">Loading interactive chart...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
                 <!-- Action Buttons -->
                 <div class="row mt-4">
                     <div class="col-md-6">
@@ -293,6 +305,194 @@ function displayForecastResults(data) {
     
     container.innerHTML = html;
     container.style.display = 'block';
+    
+    // Generate the dynamic chart after DOM is updated
+    setTimeout(() => createForecastChart(data), 100);
+}
+
+function createForecastChart(forecastData) {
+    // Fetch historical data for the past 4 months
+    fetch('/api/historical_data')
+        .then(response => response.json())
+        .then(historicalData => {
+            // Get last 4 months of historical data
+            const last4Months = historicalData.slice(-4);
+            
+            // Prepare data for Chart.js
+            const allLabels = [];
+            const historicalPrices = [];
+            const forecastPrices = [];
+            const confidenceUpper = [];
+            const confidenceLower = [];
+            
+            // Add historical data
+            last4Months.forEach(item => {
+                const date = new Date(item.Month);
+                allLabels.push(date.toLocaleDateString('en-US', { year: 'numeric', month: 'short' }));
+                historicalPrices.push(item['Price (USD/ton)']);
+                forecastPrices.push(null);
+                confidenceUpper.push(null);
+                confidenceLower.push(null);
+            });
+            
+            // Add forecast data
+            forecastData.future_dates.forEach((date, index) => {
+                const dateObj = new Date(date);
+                allLabels.push(dateObj.toLocaleDateString('en-US', { year: 'numeric', month: 'short' }));
+                historicalPrices.push(null);
+                forecastPrices.push(forecastData.forecast[index]);
+                confidenceUpper.push(forecastData.upper_ci[index]);
+                confidenceLower.push(forecastData.lower_ci[index]);
+            });
+            
+            // Create the chart
+            const ctx = document.getElementById('forecast-chart');
+            if (!ctx) return;
+            
+            // Clear any existing chart
+            if (window.forecastChart) {
+                window.forecastChart.destroy();
+            }
+            
+            // Create canvas element
+            ctx.innerHTML = '<canvas id="forecastCanvas" width="800" height="400"></canvas>';
+            const canvas = document.getElementById('forecastCanvas');
+            
+            window.forecastChart = new Chart(canvas, {
+                type: 'line',
+                data: {
+                    labels: allLabels,
+                    datasets: [
+                        {
+                            label: 'Historical Prices',
+                            data: historicalPrices,
+                            borderColor: '#2E86AB',
+                            backgroundColor: 'rgba(46, 134, 171, 0.1)',
+                            borderWidth: 3,
+                            pointRadius: 5,
+                            pointBackgroundColor: '#2E86AB',
+                            pointBorderColor: '#ffffff',
+                            pointBorderWidth: 2,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Forecasted Prices',
+                            data: forecastPrices,
+                            borderColor: '#F18F01',
+                            backgroundColor: 'rgba(241, 143, 1, 0.1)',
+                            borderWidth: 3,
+                            pointRadius: 5,
+                            pointBackgroundColor: '#F18F01',
+                            pointBorderColor: '#ffffff',
+                            pointBorderWidth: 2,
+                            borderDash: [5, 5],
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Upper Confidence',
+                            data: confidenceUpper,
+                            borderColor: 'rgba(241, 143, 1, 0.3)',
+                            backgroundColor: 'transparent',
+                            borderWidth: 1,
+                            pointRadius: 0,
+                            fill: false,
+                            borderDash: [2, 2]
+                        },
+                        {
+                            label: 'Lower Confidence',
+                            data: confidenceLower,
+                            borderColor: 'rgba(241, 143, 1, 0.3)',
+                            backgroundColor: 'rgba(241, 143, 1, 0.1)',
+                            borderWidth: 1,
+                            pointRadius: 0,
+                            fill: '-1',
+                            borderDash: [2, 2]
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'OCC Price Trend: Historical vs Forecasted',
+                            font: {
+                                size: 16,
+                                weight: 'bold'
+                            }
+                        },
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 20
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: '#ffffff',
+                            bodyColor: '#ffffff',
+                            borderColor: '#2E86AB',
+                            borderWidth: 1,
+                            callbacks: {
+                                label: function(context) {
+                                    if (context.raw !== null) {
+                                        return context.dataset.label + ': $' + context.raw.toFixed(2);
+                                    }
+                                    return null;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Time Period',
+                                font: {
+                                    weight: 'bold'
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Price (USD/ton)',
+                                font: {
+                                    weight: 'bold'
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value.toFixed(0);
+                                }
+                            }
+                        }
+                    },
+                    animation: {
+                        duration: 1000,
+                        easing: 'easeInOutQuart'
+                    }
+                }
+            });
+        })
+        .catch(error => {
+            console.error('Error fetching historical data:', error);
+            document.getElementById('forecast-chart').innerHTML = 
+                '<div class="alert alert-warning">Unable to load chart. Historical data unavailable.</div>';
+        });
 }
 
 function showError(message) {
