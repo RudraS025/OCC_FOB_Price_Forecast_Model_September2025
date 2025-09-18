@@ -1,0 +1,325 @@
+{% extends "base.html" %}
+
+{% block title %}Forecast - OCC Price Forecasting{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="fas fa-crystal-ball me-2"></i>Price Forecasting</h4>
+            </div>
+            <div class="card-body">
+                <p class="lead">Generate accurate price forecasts using advanced machine learning models.</p>
+                
+                <form id="forecast-form" class="mb-4">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <label for="n_months" class="form-label">Forecast Period</label>
+                            <select class="form-select" id="n_months" name="n_months" required>
+                                <option value="">Select months to forecast</option>
+                                {% for i in range(1, 13) %}
+                                <option value="{{ i }}">{{ i }} month{{ 's' if i > 1 else '' }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label for="model_name" class="form-label">Model Selection</label>
+                            <select class="form-select" id="model_name" name="model_name">
+                                <option value="">Auto-select best model</option>
+                                {% for model in model_info.available_models %}
+                                <option value="{{ model }}" {% if model == model_info.best_model %}selected{% endif %}>
+                                    {{ model.upper() }}{% if model == model_info.best_model %} (Best){% endif %}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-4 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-play me-2"></i>Generate Forecast
+                            </button>
+                        </div>
+                    </div>
+                </form>
+                
+                <!-- Model Information -->
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <h6>Available Models:</h6>
+                        <div class="row">
+                            {% for model in model_info.available_models %}
+                            <div class="col-md-3 mb-2">
+                                <span class="badge bg-{{ 'primary' if model == model_info.best_model else 'secondary' }} me-2">
+                                    {{ model.upper() }}
+                                </span>
+                                {% if model == model_info.best_model %}
+                                    <small class="text-success">Recommended</small>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Indicator -->
+<div id="loading-container" class="text-center loading-spinner">
+    <div class="card">
+        <div class="card-body">
+            <div class="spinner-border text-primary mb-3" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <h5>Generating Forecast...</h5>
+            <p class="text-muted">This may take a few moments</p>
+        </div>
+    </div>
+</div>
+
+<!-- Forecast Results -->
+<div id="forecast-results" style="display: none;">
+    <!-- Results will be populated by JavaScript -->
+</div>
+
+<!-- Error Display -->
+<div id="error-container" style="display: none;">
+    <div class="alert alert-danger">
+        <h5><i class="fas fa-exclamation-triangle me-2"></i>Forecast Error</h5>
+        <p id="error-message"></p>
+        <button class="btn btn-outline-danger" onclick="resetForm()">Try Again</button>
+    </div>
+</div>
+
+<!-- Information Panel -->
+<div class="row mt-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-info-circle me-2"></i>How Forecasting Works</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Machine Learning Models</h6>
+                        <ul>
+                            <li><strong>ARIMA:</strong> Classical time series analysis</li>
+                            <li><strong>LSTM:</strong> Deep learning neural networks</li>
+                            <li><strong>Prophet:</strong> Facebook's forecasting tool</li>
+                            <li><strong>Exponential Smoothing:</strong> Trend and seasonality</li>
+                            <li><strong>Random Forest:</strong> Ensemble learning</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Key Features</h6>
+                        <ul>
+                            <li>Automatic model selection</li>
+                            <li>Confidence intervals</li>
+                            <li>Seasonal pattern recognition</li>
+                            <li>Real-time model updating</li>
+                            <li>Multiple forecast horizons</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-chart-line me-2"></i>Model Performance</h5>
+            </div>
+            <div class="card-body">
+                {% if model_info.performance_metrics %}
+                    <h6>Best Model: {{ model_info.best_model.upper() }}</h6>
+                    {% set best_metrics = model_info.performance_metrics[model_info.best_model] %}
+                    <ul class="list-unstyled">
+                        <li><strong>MAE:</strong> {{ "%.2f"|format(best_metrics.mae) }}</li>
+                        <li><strong>RMSE:</strong> {{ "%.2f"|format(best_metrics.rmse) }}</li>
+                        <li><strong>MAPE:</strong> {{ "%.2f"|format(best_metrics.mape) }}%</li>
+                    </ul>
+                {% else %}
+                    <p class="text-muted">Performance metrics will be available after model evaluation.</p>
+                {% endif %}
+                
+                <hr>
+                <h6>Last Training</h6>
+                <p class="text-muted small">
+                    {{ model_info.last_training_date or 'Unknown' }}
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('forecast-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    generateForecast();
+});
+
+function generateForecast() {
+    const form = document.getElementById('forecast-form');
+    const formData = new FormData(form);
+    
+    // Show loading, hide other containers
+    document.getElementById('loading-container').style.display = 'block';
+    document.getElementById('forecast-results').style.display = 'none';
+    document.getElementById('error-container').style.display = 'none';
+    
+    // Convert FormData to URLSearchParams
+    const params = new URLSearchParams();
+    for (let [key, value] of formData) {
+        params.append(key, value);
+    }
+    
+    fetch('/forecast', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: params
+    })
+    .then(response => response.json())
+    .then(data => {
+        document.getElementById('loading-container').style.display = 'none';
+        
+        if (data.success) {
+            displayForecastResults(data);
+        } else {
+            showError(data.error || 'Unknown error occurred');
+        }
+    })
+    .catch(error => {
+        document.getElementById('loading-container').style.display = 'none';
+        showError('Network error: ' + error.message);
+    });
+}
+
+function displayForecastResults(data) {
+    const container = document.getElementById('forecast-results');
+    
+    let html = `
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-check-circle me-2"></i>
+                    Forecast Generated Successfully
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h6>Forecast Details</h6>
+                        <ul class="list-unstyled">
+                            <li><strong>Model Used:</strong> ${data.model_used.toUpperCase()}</li>
+                            <li><strong>Forecast Period:</strong> ${data.n_months} month(s)</li>
+                            <li><strong>Generated:</strong> ${new Date(data.timestamp).toLocaleString()}</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Forecast Summary</h6>
+                        <ul class="list-unstyled">
+                            <li><strong>Average Forecast:</strong> $${(data.forecast.reduce((a, b) => a + b, 0) / data.forecast.length).toFixed(2)}</li>
+                            <li><strong>Min Forecast:</strong> $${Math.min(...data.forecast).toFixed(2)}</li>
+                            <li><strong>Max Forecast:</strong> $${Math.max(...data.forecast).toFixed(2)}</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- Chart Container -->
+                <div class="chart-container">
+                    ${data.chart_html || '<p>Chart not available</p>'}
+                </div>
+                
+                <!-- Detailed Forecast Table -->
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Month</th>
+                                <th>Forecast Price</th>
+                                <th>Lower Confidence</th>
+                                <th>Upper Confidence</th>
+                                <th>Confidence Range</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+    `;
+    
+    for (let i = 0; i < data.forecast.length; i++) {
+        const range = data.upper_ci[i] - data.lower_ci[i];
+        html += `
+            <tr>
+                <td><strong>${data.future_dates[i]}</strong></td>
+                <td><span class="badge bg-primary">$${data.forecast[i].toFixed(2)}</span></td>
+                <td>$${data.lower_ci[i].toFixed(2)}</td>
+                <td>$${data.upper_ci[i].toFixed(2)}</td>
+                <td>±$${(range/2).toFixed(2)}</td>
+            </tr>
+        `;
+    }
+    
+    html += `
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <button class="btn btn-outline-primary" onclick="exportForecast()">
+                            <i class="fas fa-download me-2"></i>Export Results
+                        </button>
+                        <button class="btn btn-outline-secondary ms-2" onclick="saveForecast()">
+                            <i class="fas fa-save me-2"></i>Save Forecast
+                        </button>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <button class="btn btn-success" onclick="resetForm()">
+                            <i class="fas fa-plus me-2"></i>Generate New Forecast
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    container.innerHTML = html;
+    container.style.display = 'block';
+}
+
+function showError(message) {
+    document.getElementById('error-message').textContent = message;
+    document.getElementById('error-container').style.display = 'block';
+}
+
+function resetForm() {
+    document.getElementById('forecast-form').reset();
+    document.getElementById('forecast-results').style.display = 'none';
+    document.getElementById('error-container').style.display = 'none';
+    document.getElementById('loading-container').style.display = 'none';
+}
+
+function exportForecast() {
+    // Create CSV data from the current forecast
+    alert('Export functionality will be implemented in the next version.');
+}
+
+function saveForecast() {
+    // Save forecast to database or local storage
+    alert('Save functionality will be implemented in the next version.');
+}
+
+// Auto-select 6 months as default
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('n_months').value = '6';
+});
+</script>
+{% endblock %}

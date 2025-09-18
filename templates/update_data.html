@@ -1,0 +1,446 @@
+{% extends "base.html" %}
+
+{% block title %}Update Data - OCC Price Forecasting{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="fas fa-edit me-2"></i>Update Price Data</h4>
+            </div>
+            <div class="card-body">
+                <p class="lead">Add new actual price data to improve forecast accuracy. Models will be automatically retrained after data update.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-plus-circle me-2"></i>Add New Price Data</h5>
+            </div>
+            <div class="card-body">
+                <form id="update-form">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="month" class="form-label">Month <span class="text-danger">*</span></label>
+                            <input type="month" class="form-control" id="month" name="month" 
+                                   value="{{ next_date }}" required>
+                            <div class="form-text">Select the month for the price data</div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label for="price" class="form-label">Price (USD/ton) <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" class="form-control" id="price" name="price" 
+                                       step="0.01" min="0" max="1000" required>
+                                <span class="input-group-text">/ton</span>
+                            </div>
+                            <div class="form-text">Enter the actual price for the selected month</div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>Important:</strong> Adding new data will automatically retrain all machine learning models 
+                                to incorporate the latest information. This process may take a few moments.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Add Price Data
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary ms-2" onclick="resetForm()">
+                                <i class="fas fa-redo me-2"></i>Reset Form
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Recent Updates -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5><i class="fas fa-history me-2"></i>Recent Data Points</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Month</th>
+                                <th>Price (USD/ton)</th>
+                                <th>Month-over-Month Change</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recent-data-table">
+                            <!-- Data will be loaded dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <!-- Data Summary -->
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-chart-pie me-2"></i>Data Summary</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <h6>Current Dataset</h6>
+                    <ul class="list-unstyled">
+                        <li><strong>Total Records:</strong> {{ data_summary.metadata.total_records }}</li>
+                        <li><strong>Date Range:</strong> {{ data_summary.metadata.date_range_start }} to {{ data_summary.metadata.date_range_end }}</li>
+                        <li><strong>Last Updated:</strong> {{ data_summary.metadata.last_updated }}</li>
+                    </ul>
+                </div>
+                
+                <div class="mb-3">
+                    <h6>Price Statistics</h6>
+                    <ul class="list-unstyled">
+                        <li><strong>Average:</strong> ${{ "%.2f"|format(data_summary.metadata.mean_price) }}</li>
+                        <li><strong>Minimum:</strong> ${{ "%.2f"|format(data_summary.metadata.min_price) }}</li>
+                        <li><strong>Maximum:</strong> ${{ "%.2f"|format(data_summary.metadata.max_price) }}</li>
+                        <li><strong>Std Dev:</strong> ${{ "%.2f"|format(data_summary.metadata.std_price) }}</li>
+                    </ul>
+                </div>
+                
+                <div class="mb-3">
+                    <h6>Data Quality</h6>
+                    {% set validation = data_summary.validation %}
+                    <div class="progress mb-2">
+                        <div class="progress-bar {% if validation.is_valid %}bg-success{% else %}bg-warning{% endif %}" 
+                             style="width: {{ 100 if validation.is_valid else 75 }}%">
+                            {{ "100%" if validation.is_valid else "75%" }}
+                        </div>
+                    </div>
+                    {% if validation.issues %}
+                        <small class="text-danger">
+                            {% for issue in validation.issues %}
+                                {{ issue }}<br>
+                            {% endfor %}
+                        </small>
+                    {% else %}
+                        <small class="text-success">No data quality issues detected</small>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5><i class="fas fa-bolt me-2"></i>Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <button class="btn btn-outline-primary" onclick="refreshData()">
+                        <i class="fas fa-sync-alt me-2"></i>Refresh Data
+                    </button>
+                    <button class="btn btn-outline-success" onclick="validateData()">
+                        <i class="fas fa-check-circle me-2"></i>Validate Data
+                    </button>
+                    <button class="btn btn-outline-info" onclick="exportData()">
+                        <i class="fas fa-download me-2"></i>Export Data
+                    </button>
+                    <a href="{{ url_for('forecast') }}" class="btn btn-outline-warning">
+                        <i class="fas fa-crystal-ball me-2"></i>Generate Forecast
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Next Expected Date -->
+        <div class="card mt-3">
+            <div class="card-body text-center">
+                <h6 class="text-muted">Next Expected Data</h6>
+                <h4 class="text-primary">{{ next_date }}</h4>
+                <p class="text-muted small">Based on monthly frequency</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Modal -->
+<div class="modal fade" id="loadingModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body text-center">
+                <div class="spinner-border text-primary mb-3" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <h5>Processing Data Update</h5>
+                <p class="text-muted">Updating data and retraining models...</p>
+                <div class="progress">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                         role="progressbar" style="width: 100%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Success Modal -->
+<div class="modal fade" id="successModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-check-circle me-2"></i>Data Updated Successfully
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="success-message"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <a href="{{ url_for('forecast') }}" class="btn btn-primary">Generate Forecast</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Error Modal -->
+<div class="modal fade" id="errorModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Update Failed
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="error-message"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="resetForm()">Try Again</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('update-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    updateData();
+});
+
+function updateData() {
+    const form = document.getElementById('update-form');
+    const formData = new FormData(form);
+    
+    // Show loading modal
+    const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
+    loadingModal.show();
+    
+    // Convert FormData to URLSearchParams
+    const params = new URLSearchParams();
+    for (let [key, value] of formData) {
+        params.append(key, value);
+    }
+    
+    fetch('/update_data', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: params
+    })
+    .then(response => response.json())
+    .then(data => {
+        loadingModal.hide();
+        
+        if (data.success) {
+            showSuccess(data);
+            loadRecentData();
+            resetForm();
+        } else {
+            showError(data.error || 'Unknown error occurred');
+        }
+    })
+    .catch(error => {
+        loadingModal.hide();
+        showError('Network error: ' + error.message);
+    });
+}
+
+function showSuccess(data) {
+    const message = `
+        <div class="alert alert-success">
+            <h6><i class="fas fa-check me-2"></i>${data.message}</h6>
+            <ul class="mb-0">
+                <li><strong>Models Retrained:</strong> ${data.retrained_models}</li>
+                <li><strong>Total Data Points:</strong> ${data.data_points}</li>
+            </ul>
+        </div>
+    `;
+    
+    document.getElementById('success-message').innerHTML = message;
+    const successModal = new bootstrap.Modal(document.getElementById('successModal'));
+    successModal.show();
+}
+
+function showError(message) {
+    document.getElementById('error-message').innerHTML = `
+        <div class="alert alert-danger mb-0">
+            <h6><i class="fas fa-exclamation-triangle me-2"></i>Error</h6>
+            <p class="mb-0">${message}</p>
+        </div>
+    `;
+    
+    const errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
+    errorModal.show();
+}
+
+function resetForm() {
+    document.getElementById('update-form').reset();
+    // Set next month as default
+    const nextMonth = new Date();
+    nextMonth.setMonth(nextMonth.getMonth() + 1);
+    const nextMonthStr = nextMonth.toISOString().slice(0, 7);
+    document.getElementById('month').value = nextMonthStr;
+}
+
+function refreshData() {
+    location.reload();
+}
+
+function validateData() {
+    fetch('/api/data_summary')
+    .then(response => response.json())
+    .then(data => {
+        const validation = data.validation;
+        let message = '<h6>Data Validation Results</h6>';
+        
+        if (validation.is_valid) {
+            message += '<div class="alert alert-success"><i class="fas fa-check-circle me-2"></i>All data validation checks passed!</div>';
+        } else {
+            message += '<div class="alert alert-warning"><i class="fas fa-exclamation-triangle me-2"></i>Data validation issues found:</div>';
+            message += '<ul>';
+            validation.issues.forEach(issue => {
+                message += `<li>${issue}</li>`;
+            });
+            message += '</ul>';
+        }
+        
+        if (validation.warnings && validation.warnings.length > 0) {
+            message += '<div class="alert alert-info"><i class="fas fa-info-circle me-2"></i>Warnings:</div>';
+            message += '<ul>';
+            validation.warnings.forEach(warning => {
+                message += `<li>${warning}</li>`;
+            });
+            message += '</ul>';
+        }
+        
+        alert(message.replace(/<[^>]*>/g, '')); // Simple text version
+    })
+    .catch(error => {
+        alert('Error validating data: ' + error.message);
+    });
+}
+
+function exportData() {
+    // Create a download link for the current data
+    fetch('/api/historical_data')
+    .then(response => response.json())
+    .then(data => {
+        const csv = convertToCSV(data);
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'occ_price_data.csv';
+        a.click();
+        window.URL.revokeObjectURL(url);
+    })
+    .catch(error => {
+        alert('Error exporting data: ' + error.message);
+    });
+}
+
+function convertToCSV(data) {
+    if (!data || data.length === 0) return '';
+    
+    const headers = Object.keys(data[0]);
+    const csvContent = [
+        headers.join(','),
+        ...data.map(row => headers.map(header => {
+            const value = row[header];
+            return typeof value === 'string' && value.includes(',') ? `"${value}"` : value;
+        }).join(','))
+    ].join('\n');
+    
+    return csvContent;
+}
+
+function loadRecentData() {
+    fetch('/api/historical_data')
+    .then(response => response.json())
+    .then(data => {
+        const recentData = data.slice(-10); // Last 10 records
+        const tableBody = document.getElementById('recent-data-table');
+        
+        let html = '';
+        recentData.forEach((row, index) => {
+            const prevRow = index > 0 ? recentData[index - 1] : null;
+            const change = prevRow ? row['Price(USD/ton)'] - prevRow['Price(USD/ton)'] : 0;
+            const changePercent = prevRow ? ((change / prevRow['Price(USD/ton)']) * 100) : 0;
+            
+            html += `
+                <tr>
+                    <td>${row.Month.slice(0, 10)}</td>
+                    <td>$${row['Price(USD/ton)'].toFixed(2)}</td>
+                    <td>
+                        ${index > 0 ? `
+                            <span class="badge bg-${change >= 0 ? 'success' : 'danger'}">
+                                ${change >= 0 ? '+' : ''}${change.toFixed(2)} (${changePercent >= 0 ? '+' : ''}${changePercent.toFixed(1)}%)
+                            </span>
+                        ` : '<span class="text-muted">-</span>'}
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary" onclick="editRecord('${row.Month}', ${row['Price(USD/ton)']})">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+        
+        tableBody.innerHTML = html;
+    })
+    .catch(error => {
+        console.error('Error loading recent data:', error);
+    });
+}
+
+function editRecord(month, price) {
+    document.getElementById('month').value = month.slice(0, 7);
+    document.getElementById('price').value = price;
+    document.getElementById('price').focus();
+}
+
+// Load recent data on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadRecentData();
+});
+</script>
+{% endblock %}

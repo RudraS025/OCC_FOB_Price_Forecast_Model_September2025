@@ -1,0 +1,510 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics - OCC Price Forecasting{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Advanced Analytics Dashboard</h4>
+            </div>
+            <div class="card-body">
+                <p class="lead">Comprehensive analysis of OCC price data, trends, and model performance.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Key Metrics Row -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-database fa-2x text-primary mb-2"></i>
+                <h4>{{ data_summary.metadata.total_records }}</h4>
+                <p class="text-muted">Total Records</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-chart-line fa-2x text-success mb-2"></i>
+                <h4>${{ "%.2f"|format(data_summary.metadata.mean_price) }}</h4>
+                <p class="text-muted">Average Price</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-exclamation-triangle fa-2x text-warning mb-2"></i>
+                <h4>${{ "%.2f"|format(data_summary.metadata.std_price) }}</h4>
+                <p class="text-muted">Volatility</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-brain fa-2x text-info mb-2"></i>
+                <h4>{{ model_info.available_models|length }}</h4>
+                <p class="text-muted">ML Models</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <ul class="nav nav-tabs card-header-tabs" id="chartTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="trend-tab" data-bs-toggle="tab" data-bs-target="#trend-pane" type="button" role="tab">
+                            <i class="fas fa-chart-line me-2"></i>Price Trends
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="seasonal-tab" data-bs-toggle="tab" data-bs-target="#seasonal-pane" type="button" role="tab">
+                            <i class="fas fa-calendar-alt me-2"></i>Seasonal Analysis
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="performance-tab" data-bs-toggle="tab" data-bs-target="#performance-pane" type="button" role="tab">
+                            <i class="fas fa-trophy me-2"></i>Model Performance
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="statistics-tab" data-bs-toggle="tab" data-bs-target="#statistics-pane" type="button" role="tab">
+                            <i class="fas fa-calculator me-2"></i>Statistics
+                        </button>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-body">
+                <div class="tab-content" id="chartTabContent">
+                    <div class="tab-pane fade show active" id="trend-pane" role="tabpanel">
+                        <div class="chart-container">
+                            {{ charts.price_trend|safe if charts.price_trend else '<p>Loading price trend chart...</p>' }}
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="seasonal-pane" role="tabpanel">
+                        <div class="chart-container">
+                            {{ charts.seasonal_analysis|safe if charts.seasonal_analysis else '<p>Loading seasonal analysis...</p>' }}
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="performance-pane" role="tabpanel">
+                        <div class="chart-container">
+                            {{ charts.model_performance|safe if charts.model_performance else '<p>Loading model performance chart...</p>' }}
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="statistics-pane" role="tabpanel">
+                        <div class="chart-container">
+                            {{ charts.data_statistics|safe if charts.data_statistics else '<p>Loading statistics dashboard...</p>' }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Detailed Analysis Row -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-chart-pie me-2"></i>Price Distribution</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="priceDistribution" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-calendar-week me-2"></i>Monthly Price Changes</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="monthlyChanges" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Model Comparison Row -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-balance-scale me-2"></i>Model Comparison</h5>
+            </div>
+            <div class="card-body">
+                {% if model_info.performance_metrics %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Model</th>
+                                <th>MAE</th>
+                                <th>RMSE</th>
+                                <th>MAPE (%)</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for model, metrics in model_info.performance_metrics.items() %}
+                            <tr {% if model == model_info.best_model %}class="table-success"{% endif %}>
+                                <td>
+                                    <strong>{{ model.upper() }}</strong>
+                                    {% if model == model_info.best_model %}
+                                        <span class="badge bg-primary ms-2">Best</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ "%.2f"|format(metrics.mae) }}</td>
+                                <td>{{ "%.2f"|format(metrics.rmse) }}</td>
+                                <td>{{ "%.2f"|format(metrics.mape) }}</td>
+                                <td>
+                                    <span class="badge bg-success">Trained</span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Model performance metrics will be available after training completion.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-cogs me-2"></i>Model Settings</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <h6>Best Model</h6>
+                    <span class="badge bg-primary fs-6">{{ model_info.best_model.upper() }}</span>
+                </div>
+                
+                <div class="mb-3">
+                    <h6>Last Training</h6>
+                    <p class="text-muted small">
+                        {{ model_info.last_training_date or 'Not available' }}
+                    </p>
+                </div>
+                
+                <div class="mb-3">
+                    <h6>Available Models</h6>
+                    {% for model in model_info.available_models %}
+                    <span class="badge bg-secondary me-1 mb-1">{{ model.upper() }}</span>
+                    {% endfor %}
+                </div>
+                
+                <button class="btn btn-outline-primary btn-sm" onclick="retrainModels()">
+                    <i class="fas fa-sync-alt me-2"></i>Retrain Models
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Data Quality and Insights -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-check-circle me-2"></i>Data Quality Report</h5>
+            </div>
+            <div class="card-body">
+                {% set validation = data_summary.validation %}
+                <div class="mb-3">
+                    <h6>Overall Status</h6>
+                    <div class="alert {% if validation.is_valid %}alert-success{% else %}alert-warning{% endif %}">
+                        <i class="fas fa-{% if validation.is_valid %}check-circle{% else %}exclamation-triangle{% endif %} me-2"></i>
+                        {% if validation.is_valid %}
+                            Data quality is excellent. No issues detected.
+                        {% else %}
+                            Some data quality issues were found.
+                        {% endif %}
+                    </div>
+                </div>
+                
+                {% if validation.issues %}
+                <div class="mb-3">
+                    <h6>Issues Found</h6>
+                    <ul class="list-group list-group-flush">
+                        {% for issue in validation.issues %}
+                        <li class="list-group-item d-flex align-items-center">
+                            <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                            {{ issue }}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+                
+                {% if validation.warnings %}
+                <div class="mb-3">
+                    <h6>Warnings</h6>
+                    <ul class="list-group list-group-flush">
+                        {% for warning in validation.warnings %}
+                        <li class="list-group-item d-flex align-items-center">
+                            <i class="fas fa-info-circle text-info me-2"></i>
+                            {{ warning }}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-lightbulb me-2"></i>Market Insights</h5>
+            </div>
+            <div class="card-body">
+                {% set trend = data_summary.statistics.recent_trend %}
+                {% set seasonal = data_summary.statistics.seasonal_patterns %}
+                
+                <div class="mb-3">
+                    <h6>Recent Trend</h6>
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-arrow-{% if trend.trend_direction == 'increasing' %}up text-success{% elif trend.trend_direction == 'decreasing' %}down text-danger{% else %}right text-warning{% endif %} me-2"></i>
+                        <span>{{ trend.trend_direction.title() }}</span>
+                        <span class="badge bg-secondary ms-2">{{ "%.2f"|format(trend.slope) }}</span>
+                    </div>
+                    <small class="text-muted">
+                        Recent volatility: ${{ "%.2f"|format(trend.recent_volatility) }}
+                    </small>
+                </div>
+                
+                {% if not seasonal.insufficient_data %}
+                <div class="mb-3">
+                    <h6>Seasonal Patterns</h6>
+                    <p><strong>Highest Month:</strong> Month {{ seasonal.highest_month }}</p>
+                    <p><strong>Lowest Month:</strong> Month {{ seasonal.lowest_month }}</p>
+                    <p><strong>Seasonal Range:</strong> ${{ "%.2f"|format(seasonal.seasonal_range) }}</p>
+                </div>
+                {% endif %}
+                
+                <div class="mb-3">
+                    <h6>Price Range</h6>
+                    <div class="row">
+                        <div class="col-6">
+                            <small class="text-muted">Min</small><br>
+                            <strong>${{ "%.2f"|format(data_summary.metadata.min_price) }}</strong>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted">Max</small><br>
+                            <strong>${{ "%.2f"|format(data_summary.metadata.max_price) }}</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Export and Actions -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-tools me-2"></i>Analytics Tools</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Export Options</h6>
+                        <div class="btn-group" role="group">
+                            <button class="btn btn-outline-primary" onclick="exportAnalytics('pdf')">
+                                <i class="fas fa-file-pdf me-2"></i>Export PDF
+                            </button>
+                            <button class="btn btn-outline-success" onclick="exportAnalytics('excel')">
+                                <i class="fas fa-file-excel me-2"></i>Export Excel
+                            </button>
+                            <button class="btn btn-outline-info" onclick="exportAnalytics('csv')">
+                                <i class="fas fa-file-csv me-2"></i>Export CSV
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <h6>Advanced Actions</h6>
+                        <div class="btn-group" role="group">
+                            <button class="btn btn-outline-warning" onclick="generateReport()">
+                                <i class="fas fa-chart-bar me-2"></i>Generate Report
+                            </button>
+                            <button class="btn btn-outline-info" onclick="refreshAnalytics()">
+                                <i class="fas fa-sync-alt me-2"></i>Refresh Data
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Initialize Chart.js charts when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    initializeCharts();
+});
+
+function initializeCharts() {
+    // Load historical data for charts
+    fetch('/api/historical_data')
+    .then(response => response.json())
+    .then(data => {
+        createPriceDistributionChart(data);
+        createMonthlyChangesChart(data);
+    })
+    .catch(error => {
+        console.error('Error loading chart data:', error);
+    });
+}
+
+function createPriceDistributionChart(data) {
+    const ctx = document.getElementById('priceDistribution').getContext('2d');
+    const prices = data.map(d => d['Price(USD/ton)']);
+    
+    // Create histogram bins
+    const min = Math.min(...prices);
+    const max = Math.max(...prices);
+    const binCount = 10;
+    const binSize = (max - min) / binCount;
+    
+    const bins = Array(binCount).fill(0);
+    const labels = [];
+    
+    for (let i = 0; i < binCount; i++) {
+        labels.push(`$${(min + i * binSize).toFixed(0)}-${(min + (i + 1) * binSize).toFixed(0)}`);
+    }
+    
+    prices.forEach(price => {
+        const binIndex = Math.min(Math.floor((price - min) / binSize), binCount - 1);
+        bins[binIndex]++;
+    });
+    
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Frequency',
+                data: bins,
+                backgroundColor: 'rgba(46, 134, 171, 0.6)',
+                borderColor: 'rgba(46, 134, 171, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
+
+function createMonthlyChangesChart(data) {
+    const ctx = document.getElementById('monthlyChanges').getContext('2d');
+    
+    const changes = [];
+    const labels = [];
+    
+    for (let i = 1; i < data.length; i++) {
+        const change = ((data[i]['Price(USD/ton)'] - data[i-1]['Price(USD/ton)']) / data[i-1]['Price(USD/ton)']) * 100;
+        changes.push(change);
+        labels.push(data[i].Month.slice(0, 7)); // YYYY-MM format
+    }
+    
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels.slice(-24), // Last 24 months
+            datasets: [{
+                label: 'Monthly Change (%)',
+                data: changes.slice(-24),
+                borderColor: 'rgba(241, 143, 1, 1)',
+                backgroundColor: 'rgba(241, 143, 1, 0.1)',
+                fill: true,
+                tension: 0.3
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
+
+function retrainModels() {
+    if (confirm('Are you sure you want to retrain all models? This may take several minutes.')) {
+        const button = event.target;
+        button.disabled = true;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Retraining...';
+        
+        fetch('/api/retrain_models', { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            button.disabled = false;
+            button.innerHTML = '<i class="fas fa-sync-alt me-2"></i>Retrain Models';
+            
+            if (data.best_model) {
+                alert(`Models retrained successfully! Best model: ${data.best_model.toUpperCase()}`);
+                location.reload();
+            } else {
+                alert('Error retraining models: ' + (data.error || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            button.disabled = false;
+            button.innerHTML = '<i class="fas fa-sync-alt me-2"></i>Retrain Models';
+            alert('Network error: ' + error.message);
+        });
+    }
+}
+
+function exportAnalytics(format) {
+    alert(`Export to ${format.toUpperCase()} functionality will be implemented in the next version.`);
+}
+
+function generateReport() {
+    alert('Advanced report generation functionality will be implemented in the next version.');
+}
+
+function refreshAnalytics() {
+    location.reload();
+}
+</script>
+{% endblock %}
