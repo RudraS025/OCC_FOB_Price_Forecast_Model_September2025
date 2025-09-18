@@ -2,360 +2,353 @@
 
 {% block title %}Analytics - OCC Price Forecasting{% endblock %}
 
+{% block head %}
+<style>
+.analytics-dashboard {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 2rem 0;
+}
+
+.dashboard-header {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    color: white;
+    text-align: center;
+}
+
+.metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+}
+
+.metric-card {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 15px;
+    padding: 2rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.metric-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+}
+
+.metric-icon {
+    width: 60px;
+    height: 60px;
+    margin: 0 auto 1rem;
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: white;
+}
+
+.icon-primary { background: linear-gradient(45deg, #667eea, #764ba2); }
+.icon-success { background: linear-gradient(45deg, #56CCF2, #2F80ED); }
+.icon-warning { background: linear-gradient(45deg, #FFB347, #FF8C42); }
+.icon-info { background: linear-gradient(45deg, #A8E6CF, #7FCDCD); }
+
+.chart-section {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    margin-bottom: 2rem;
+}
+
+.chart-header {
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    color: white;
+    padding: 1.5rem;
+    border-bottom: none;
+}
+
+.nav-pills-custom .nav-link {
+    border-radius: 25px;
+    padding: 0.75rem 1.5rem;
+    margin: 0 0.25rem;
+    color: #667eea;
+    background: rgba(102, 126, 234, 0.1);
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.nav-pills-custom .nav-link.active {
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    color: white;
+    border-color: white;
+}
+
+.chart-container {
+    padding: 2rem;
+    min-height: 500px;
+}
+
+.performance-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.model-comparison-table {
+    background: white;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+}
+
+.insights-panel {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 15px;
+    padding: 1.5rem;
+}
+
+.insight-item {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    backdrop-filter: blur(10px);
+}
+
+.btn-custom {
+    border-radius: 25px;
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+    border: 2px solid;
+    transition: all 0.3s ease;
+}
+
+.btn-gradient {
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    border-color: transparent;
+    color: white;
+}
+
+.btn-gradient:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+@media (max-width: 768px) {
+    .performance-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .metrics-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header bg-primary text-white">
-                <h4 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Advanced Analytics Dashboard</h4>
-            </div>
-            <div class="card-body">
-                <p class="lead">Comprehensive analysis of OCC price data, trends, and model performance.</p>
-            </div>
+<div class="analytics-dashboard">
+    <div class="container-fluid">
+        <!-- Modern Dashboard Header -->
+        <div class="dashboard-header">
+            <h1 class="display-4 fw-bold mb-3">
+                <i class="fas fa-chart-bar me-3"></i>Analytics Intelligence Center
+            </h1>
+            <p class="lead mb-0">Advanced ML-powered insights and performance analytics for OCC price forecasting</p>
         </div>
-    </div>
-</div>
 
-<!-- Key Metrics Row -->
-<div class="row mb-4">
-    <div class="col-md-3">
-        <div class="card text-center">
-            <div class="card-body">
-                <i class="fas fa-database fa-2x text-primary mb-2"></i>
-                <h4>{{ data_summary.metadata.total_records }}</h4>
-                <p class="text-muted">Total Records</p>
+        <!-- Key Metrics Grid -->
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-icon icon-primary">
+                    <i class="fas fa-database"></i>
+                </div>
+                <h3 class="fw-bold">{{ data_summary.metadata.total_records }}</h3>
+                <p class="text-muted mb-0">Data Points</p>
+                <small class="text-success">Last 9 years</small>
+            </div>
+            
+            <div class="metric-card">
+                <div class="metric-icon icon-success">
+                    <i class="fas fa-dollar-sign"></i>
+                </div>
+                <h3 class="fw-bold">${{ "%.0f"|format(data_summary.metadata.mean_price) }}</h3>
+                <p class="text-muted mb-0">Average Price</p>
+                <small class="text-info">Per ton USD</small>
+            </div>
+            
+            <div class="metric-card">
+                <div class="metric-icon icon-warning">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <h3 class="fw-bold">${{ "%.0f"|format(data_summary.metadata.std_price) }}</h3>
+                <p class="text-muted mb-0">Volatility</p>
+                <small class="text-warning">Standard deviation</small>
+            </div>
+            
+            <div class="metric-card">
+                <div class="metric-icon icon-info">
+                    <i class="fas fa-brain"></i>
+                </div>
+                <h3 class="fw-bold">{{ model_info.available_models|length }}</h3>
+                <p class="text-muted mb-0">ML Models</p>
+                <small class="text-success">{{ model_info.best_model.upper() }} is best</small>
             </div>
         </div>
-    </div>
-    
-    <div class="col-md-3">
-        <div class="card text-center">
-            <div class="card-body">
-                <i class="fas fa-chart-line fa-2x text-success mb-2"></i>
-                <h4>${{ "%.2f"|format(data_summary.metadata.mean_price) }}</h4>
-                <p class="text-muted">Average Price</p>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-3">
-        <div class="card text-center">
-            <div class="card-body">
-                <i class="fas fa-exclamation-triangle fa-2x text-warning mb-2"></i>
-                <h4>${{ "%.2f"|format(data_summary.metadata.std_price) }}</h4>
-                <p class="text-muted">Volatility</p>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-3">
-        <div class="card text-center">
-            <div class="card-body">
-                <i class="fas fa-brain fa-2x text-info mb-2"></i>
-                <h4>{{ model_info.available_models|length }}</h4>
-                <p class="text-muted">ML Models</p>
-            </div>
-        </div>
-    </div>
-</div>
 
-<!-- Charts Row -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <ul class="nav nav-tabs card-header-tabs" id="chartTabs" role="tablist">
+        <!-- Analytics Charts Section -->
+        <div class="chart-section">
+            <div class="chart-header">
+                <h4 class="mb-3"><i class="fas fa-analytics me-2"></i>Market Intelligence Dashboard</h4>
+                <ul class="nav nav-pills nav-pills-custom justify-content-center" id="analyticsTabs" role="tablist">
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="trend-tab" data-bs-toggle="tab" data-bs-target="#trend-pane" type="button" role="tab">
+                        <button class="nav-link active" id="price-trends-tab" data-bs-toggle="tab" data-bs-target="#price-trends" type="button" role="tab">
                             <i class="fas fa-chart-line me-2"></i>Price Trends
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="seasonal-tab" data-bs-toggle="tab" data-bs-target="#seasonal-pane" type="button" role="tab">
-                            <i class="fas fa-calendar-alt me-2"></i>Seasonal Analysis
+                        <button class="nav-link" id="seasonal-patterns-tab" data-bs-toggle="tab" data-bs-target="#seasonal-patterns" type="button" role="tab">
+                            <i class="fas fa-calendar-alt me-2"></i>Seasonal Patterns
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="performance-tab" data-bs-toggle="tab" data-bs-target="#performance-pane" type="button" role="tab">
+                        <button class="nav-link" id="model-analytics-tab" data-bs-toggle="tab" data-bs-target="#model-analytics" type="button" role="tab">
                             <i class="fas fa-trophy me-2"></i>Model Performance
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="statistics-tab" data-bs-toggle="tab" data-bs-target="#statistics-pane" type="button" role="tab">
-                            <i class="fas fa-calculator me-2"></i>Statistics
+                        <button class="nav-link" id="statistical-insights-tab" data-bs-toggle="tab" data-bs-target="#statistical-insights" type="button" role="tab">
+                            <i class="fas fa-calculator me-2"></i>Statistical Analysis
                         </button>
                     </li>
                 </ul>
             </div>
-            <div class="card-body">
-                <div class="tab-content" id="chartTabContent">
-                    <div class="tab-pane fade show active" id="trend-pane" role="tabpanel">
-                        <div class="chart-container">
-                            {{ charts.price_trend|safe if charts.price_trend else '<p>Loading price trend chart...</p>' }}
-                        </div>
-                    </div>
-                    <div class="tab-pane fade" id="seasonal-pane" role="tabpanel">
-                        <div class="chart-container">
-                            {{ charts.seasonal_analysis|safe if charts.seasonal_analysis else '<p>Loading seasonal analysis...</p>' }}
-                        </div>
-                    </div>
-                    <div class="tab-pane fade" id="performance-pane" role="tabpanel">
-                        <div class="chart-container">
-                            {{ charts.model_performance|safe if charts.model_performance else '<p>Loading model performance chart...</p>' }}
-                        </div>
-                    </div>
-                    <div class="tab-pane fade" id="statistics-pane" role="tabpanel">
-                        <div class="chart-container">
-                            {{ charts.data_statistics|safe if charts.data_statistics else '<p>Loading statistics dashboard...</p>' }}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 
-<!-- Detailed Analysis Row -->
-<div class="row mb-4">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h5><i class="fas fa-chart-pie me-2"></i>Price Distribution</h5>
-            </div>
-            <div class="card-body">
-                <canvas id="priceDistribution" width="400" height="200"></canvas>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h5><i class="fas fa-calendar-week me-2"></i>Monthly Price Changes</h5>
-            </div>
-            <div class="card-body">
-                <canvas id="monthlyChanges" width="400" height="200"></canvas>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Model Comparison Row -->
-<div class="row mb-4">
-    <div class="col-md-8">
-        <div class="card">
-            <div class="card-header">
-                <h5><i class="fas fa-balance-scale me-2"></i>Model Comparison</h5>
-            </div>
-            <div class="card-body">
-                {% if model_info.performance_metrics %}
-                <div class="table-responsive">
-                    <table class="table table-striped">
-                        <thead>
-                            <tr>
-                                <th>Model</th>
-                                <th>MAE</th>
-                                <th>RMSE</th>
-                                <th>MAPE (%)</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for model, metrics in model_info.performance_metrics.items() %}
-                            <tr {% if model == model_info.best_model %}class="table-success"{% endif %}>
-                                <td>
-                                    <strong>{{ model.upper() }}</strong>
-                                    {% if model == model_info.best_model %}
-                                        <span class="badge bg-primary ms-2">Best</span>
-                                    {% endif %}
-                                </td>
-                                <td>{{ "%.2f"|format(metrics.mae) }}</td>
-                                <td>{{ "%.2f"|format(metrics.rmse) }}</td>
-                                <td>{{ "%.2f"|format(metrics.mape) }}</td>
-                                <td>
-                                    <span class="badge bg-success">Trained</span>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-                {% else %}
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle me-2"></i>
-                    Model performance metrics will be available after training completion.
-                </div>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-header">
-                <h5><i class="fas fa-cogs me-2"></i>Model Settings</h5>
-            </div>
-            <div class="card-body">
-                <div class="mb-3">
-                    <h6>Best Model</h6>
-                    <span class="badge bg-primary fs-6">{{ model_info.best_model.upper() }}</span>
-                </div>
-                
-                <div class="mb-3">
-                    <h6>Last Training</h6>
-                    <p class="text-muted small">
-                        {{ model_info.last_training_date or 'Not available' }}
-                    </p>
-                </div>
-                
-                <div class="mb-3">
-                    <h6>Available Models</h6>
-                    {% for model in model_info.available_models %}
-                    <span class="badge bg-secondary me-1 mb-1">{{ model.upper() }}</span>
-                    {% endfor %}
-                </div>
-                
-                <button class="btn btn-outline-primary btn-sm" onclick="retrainModels()">
-                    <i class="fas fa-sync-alt me-2"></i>Retrain Models
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Data Quality and Insights -->
-<div class="row mb-4">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h5><i class="fas fa-check-circle me-2"></i>Data Quality Report</h5>
-            </div>
-            <div class="card-body">
-                {% set validation = data_summary.validation %}
-                <div class="mb-3">
-                    <h6>Overall Status</h6>
-                    <div class="alert {% if validation.is_valid %}alert-success{% else %}alert-warning{% endif %}">
-                        <i class="fas fa-{% if validation.is_valid %}check-circle{% else %}exclamation-triangle{% endif %} me-2"></i>
-                        {% if validation.is_valid %}
-                            Data quality is excellent. No issues detected.
-                        {% else %}
-                            Some data quality issues were found.
-                        {% endif %}
+            <div class="tab-content" id="analyticsTabContent">
+                <!-- Price Trends Tab -->
+                <div class="tab-pane fade show active" id="price-trends" role="tabpanel">
+                    <div class="chart-container">
+                        <div id="priceTrendsChart" style="height: 500px;"></div>
                     </div>
                 </div>
-                
-                {% if validation.issues %}
-                <div class="mb-3">
-                    <h6>Issues Found</h6>
-                    <ul class="list-group list-group-flush">
-                        {% for issue in validation.issues %}
-                        <li class="list-group-item d-flex align-items-center">
-                            <i class="fas fa-exclamation-triangle text-warning me-2"></i>
-                            {{ issue }}
-                        </li>
-                        {% endfor %}
-                    </ul>
-                </div>
-                {% endif %}
-                
-                {% if validation.warnings %}
-                <div class="mb-3">
-                    <h6>Warnings</h6>
-                    <ul class="list-group list-group-flush">
-                        {% for warning in validation.warnings %}
-                        <li class="list-group-item d-flex align-items-center">
-                            <i class="fas fa-info-circle text-info me-2"></i>
-                            {{ warning }}
-                        </li>
-                        {% endfor %}
-                    </ul>
-                </div>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h5><i class="fas fa-lightbulb me-2"></i>Market Insights</h5>
-            </div>
-            <div class="card-body">
-                {% set trend = data_summary.statistics.recent_trend %}
-                {% set seasonal = data_summary.statistics.seasonal_patterns %}
-                
-                <div class="mb-3">
-                    <h6>Recent Trend</h6>
-                    <div class="d-flex align-items-center">
-                        <i class="fas fa-arrow-{% if trend.trend_direction == 'increasing' %}up text-success{% elif trend.trend_direction == 'decreasing' %}down text-danger{% else %}right text-warning{% endif %} me-2"></i>
-                        <span>{{ trend.trend_direction.title() }}</span>
-                        <span class="badge bg-secondary ms-2">{{ "%.2f"|format(trend.slope) }}</span>
-                    </div>
-                    <small class="text-muted">
-                        Recent volatility: ${{ "%.2f"|format(trend.recent_volatility) }}
-                    </small>
-                </div>
-                
-                {% if not seasonal.insufficient_data %}
-                <div class="mb-3">
-                    <h6>Seasonal Patterns</h6>
-                    <p><strong>Highest Month:</strong> Month {{ seasonal.highest_month }}</p>
-                    <p><strong>Lowest Month:</strong> Month {{ seasonal.lowest_month }}</p>
-                    <p><strong>Seasonal Range:</strong> ${{ "%.2f"|format(seasonal.seasonal_range) }}</p>
-                </div>
-                {% endif %}
-                
-                <div class="mb-3">
-                    <h6>Price Range</h6>
-                    <div class="row">
-                        <div class="col-6">
-                            <small class="text-muted">Min</small><br>
-                            <strong>${{ "%.2f"|format(data_summary.metadata.min_price) }}</strong>
+
+                <!-- Seasonal Patterns Tab -->
+                <div class="tab-pane fade" id="seasonal-patterns" role="tabpanel">
+                    <div class="chart-container">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div id="seasonalChart" style="height: 400px;"></div>
+                            </div>
+                            <div class="col-md-4">
+                                <div id="monthlyBoxplot" style="height: 400px;"></div>
+                            </div>
                         </div>
-                        <div class="col-6">
-                            <small class="text-muted">Max</small><br>
-                            <strong>${{ "%.2f"|format(data_summary.metadata.max_price) }}</strong>
+                    </div>
+                </div>
+
+                <!-- Model Performance Tab -->
+                <div class="tab-pane fade" id="model-analytics" role="tabpanel">
+                    <div class="chart-container">
+                        <div class="performance-grid">
+                            <div class="model-comparison-table">
+                                <div class="card-header bg-gradient-primary text-white">
+                                    <h5 class="mb-0"><i class="fas fa-trophy me-2"></i>Complete Model Comparison</h5>
+                                </div>
+                                <div class="card-body p-0">
+                                    <div id="modelPerformanceChart" style="height: 400px;"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="insights-panel">
+                                <h5 class="mb-3"><i class="fas fa-lightbulb me-2"></i>AI Insights</h5>
+                                <div class="insight-item">
+                                    <h6>Best Model</h6>
+                                    <p class="mb-1"><strong>{{ model_info.best_model.upper() }}</strong></p>
+                                    <small>Highest accuracy with lowest error rate</small>
+                                </div>
+                                <div class="insight-item">
+                                    <h6>Model Diversity</h6>
+                                    <p class="mb-1">{{ model_info.available_models|length }} different algorithms</p>
+                                    <small>Ensemble approach for robust predictions</small>
+                                </div>
+                                <div class="insight-item">
+                                    <h6>Performance Status</h6>
+                                    <p class="mb-1">All models trained</p>
+                                    <small>Ready for forecasting</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Statistical Analysis Tab -->
+                <div class="tab-pane fade" id="statistical-insights" role="tabpanel">
+                    <div class="chart-container">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div id="distributionChart" style="height: 350px;"></div>
+                            </div>
+                            <div class="col-md-6">
+                                <div id="volatilityChart" style="height: 350px;"></div>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <div id="correlationChart" style="height: 350px;"></div>
+                            </div>
+                            <div class="col-md-6">
+                                <div id="trendDecomposition" style="height: 350px;"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-</div>
 
-<!-- Export and Actions -->
-<div class="row">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h5><i class="fas fa-tools me-2"></i>Analytics Tools</h5>
+        <!-- Action Center -->
+        <div class="chart-section">
+            <div class="chart-header">
+                <h4><i class="fas fa-tools me-2"></i>Advanced Analytics Tools</h4>
             </div>
-            <div class="card-body">
+            <div class="chart-container">
                 <div class="row">
                     <div class="col-md-6">
-                        <h6>Export Options</h6>
-                        <div class="btn-group" role="group">
-                            <button class="btn btn-outline-primary" onclick="exportAnalytics('pdf')">
-                                <i class="fas fa-file-pdf me-2"></i>Export PDF
-                            </button>
-                            <button class="btn btn-outline-success" onclick="exportAnalytics('excel')">
-                                <i class="fas fa-file-excel me-2"></i>Export Excel
-                            </button>
-                            <button class="btn btn-outline-info" onclick="exportAnalytics('csv')">
-                                <i class="fas fa-file-csv me-2"></i>Export CSV
-                            </button>
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <i class="fas fa-download fa-3x text-primary mb-3"></i>
+                                <h5>Export Analytics</h5>
+                                <p class="text-muted">Download comprehensive reports</p>
+                                <div class="btn-group" role="group">
+                                    <button class="btn btn-custom btn-gradient" onclick="exportAnalytics('pdf')">
+                                        <i class="fas fa-file-pdf me-2"></i>PDF Report
+                                    </button>
+                                    <button class="btn btn-custom btn-gradient" onclick="exportAnalytics('excel')">
+                                        <i class="fas fa-file-excel me-2"></i>Excel Data
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     
                     <div class="col-md-6">
-                        <h6>Advanced Actions</h6>
-                        <div class="btn-group" role="group">
-                            <button class="btn btn-outline-warning" onclick="generateReport()">
-                                <i class="fas fa-chart-bar me-2"></i>Generate Report
-                            </button>
-                            <button class="btn btn-outline-info" onclick="refreshAnalytics()">
-                                <i class="fas fa-sync-alt me-2"></i>Refresh Data
-                            </button>
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <i class="fas fa-sync-alt fa-3x text-success mb-3"></i>
+                                <h5>Model Management</h5>
+                                <p class="text-muted">Retrain and optimize models</p>
+                                <button class="btn btn-custom btn-gradient" onclick="retrainModels()">
+                                    <i class="fas fa-brain me-2"></i>Retrain All Models
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -366,145 +359,351 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 <script>
-// Initialize Chart.js charts when page loads
+// Modern Analytics Dashboard JavaScript
 document.addEventListener('DOMContentLoaded', function() {
-    initializeCharts();
+    initializeAnalyticsDashboard();
 });
 
-function initializeCharts() {
-    // Load historical data for charts
-    fetch('/api/historical_data')
-    .then(response => response.json())
-    .then(data => {
-        createPriceDistributionChart(data);
-        createMonthlyChangesChart(data);
-    })
-    .catch(error => {
-        console.error('Error loading chart data:', error);
+function initializeAnalyticsDashboard() {
+    // Load data and initialize all charts
+    Promise.all([
+        fetch('/api/historical_data').then(r => r.json()),
+        fetch('/api/model_performance').then(r => r.json()).catch(() => null)
+    ]).then(([historicalData, modelData]) => {
+        initializePriceTrends(historicalData);
+        initializeSeasonalAnalysis(historicalData);
+        initializeModelPerformance(modelData);
+        initializeStatisticalAnalysis(historicalData);
+    }).catch(error => {
+        console.error('Error loading analytics data:', error);
+        showErrorMessage('Failed to load analytics data. Please refresh the page.');
     });
 }
 
-function createPriceDistributionChart(data) {
-    const ctx = document.getElementById('priceDistribution').getContext('2d');
+function initializePriceTrends(data) {
+    const dates = data.map(d => d.Month);
     const prices = data.map(d => d['Price(USD/ton)']);
     
-    // Create histogram bins
-    const min = Math.min(...prices);
-    const max = Math.max(...prices);
-    const binCount = 10;
-    const binSize = (max - min) / binCount;
+    // Calculate moving averages
+    const ma12 = calculateMovingAverage(prices, 12);
+    const ma24 = calculateMovingAverage(prices, 24);
     
-    const bins = Array(binCount).fill(0);
-    const labels = [];
+    const trace1 = {
+        x: dates,
+        y: prices,
+        type: 'scatter',
+        mode: 'lines',
+        name: 'Actual Prices',
+        line: { color: '#667eea', width: 2 }
+    };
     
-    for (let i = 0; i < binCount; i++) {
-        labels.push(`$${(min + i * binSize).toFixed(0)}-${(min + (i + 1) * binSize).toFixed(0)}`);
-    }
+    const trace2 = {
+        x: dates.slice(11),
+        y: ma12.slice(11),
+        type: 'scatter',
+        mode: 'lines',
+        name: '12-Month MA',
+        line: { color: '#764ba2', width: 2, dash: 'dash' }
+    };
     
-    prices.forEach(price => {
-        const binIndex = Math.min(Math.floor((price - min) / binSize), binCount - 1);
-        bins[binIndex]++;
-    });
+    const trace3 = {
+        x: dates.slice(23),
+        y: ma24.slice(23),
+        type: 'scatter',
+        mode: 'lines',
+        name: '24-Month MA',
+        line: { color: '#ff6b6b', width: 2, dash: 'dot' }
+    };
     
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Frequency',
-                data: bins,
-                backgroundColor: 'rgba(46, 134, 171, 0.6)',
-                borderColor: 'rgba(46, 134, 171, 1)',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
-            }
-        }
-    });
+    const layout = {
+        title: 'OCC Price Trends with Moving Averages',
+        xaxis: { title: 'Date' },
+        yaxis: { title: 'Price (USD/ton)' },
+        hovermode: 'x unified',
+        font: { family: 'Arial, sans-serif' }
+    };
+    
+    Plotly.newPlot('priceTrendsChart', [trace1, trace2, trace3], layout, {responsive: true});
 }
 
-function createMonthlyChangesChart(data) {
-    const ctx = document.getElementById('monthlyChanges').getContext('2d');
+function initializeSeasonalAnalysis(data) {
+    // Extract month and year for seasonal analysis
+    const monthlyData = {};
     
-    const changes = [];
-    const labels = [];
+    data.forEach(d => {
+        const date = new Date(d.Month);
+        const month = date.getMonth() + 1;
+        const year = date.getFullYear();
+        
+        if (!monthlyData[month]) monthlyData[month] = [];
+        monthlyData[month].push(d['Price(USD/ton)']);
+    });
     
-    for (let i = 1; i < data.length; i++) {
-        const change = ((data[i]['Price(USD/ton)'] - data[i-1]['Price(USD/ton)']) / data[i-1]['Price(USD/ton)']) * 100;
-        changes.push(change);
-        labels.push(data[i].Month.slice(0, 7)); // YYYY-MM format
+    // Create seasonal pattern chart
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    
+    const seasonalAvg = months.map((_, i) => {
+        const monthData = monthlyData[i + 1] || [];
+        return monthData.length > 0 ? monthData.reduce((a, b) => a + b) / monthData.length : 0;
+    });
+    
+    const seasonalTrace = {
+        x: months,
+        y: seasonalAvg,
+        type: 'bar',
+        marker: { color: '#667eea' },
+        name: 'Average Price by Month'
+    };
+    
+    const seasonalLayout = {
+        title: 'Seasonal Price Patterns',
+        xaxis: { title: 'Month' },
+        yaxis: { title: 'Average Price (USD/ton)' }
+    };
+    
+    Plotly.newPlot('seasonalChart', [seasonalTrace], seasonalLayout, {responsive: true});
+    
+    // Create boxplot for monthly distribution
+    const boxData = months.map((month, i) => ({
+        y: monthlyData[i + 1] || [],
+        type: 'box',
+        name: month,
+        boxpoints: 'outliers'
+    }));
+    
+    const boxLayout = {
+        title: 'Monthly Price Distribution',
+        yaxis: { title: 'Price (USD/ton)' },
+        showlegend: false
+    };
+    
+    Plotly.newPlot('monthlyBoxplot', boxData, boxLayout, {responsive: true});
+}
+
+function initializeModelPerformance(modelData) {
+    if (!modelData || !modelData.performance_metrics) {
+        document.getElementById('modelPerformanceChart').innerHTML = 
+            '<div class="alert alert-info">Model performance data will be available after training completion.</div>';
+        return;
     }
     
-    new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: labels.slice(-24), // Last 24 months
-            datasets: [{
-                label: 'Monthly Change (%)',
-                data: changes.slice(-24),
-                borderColor: 'rgba(241, 143, 1, 1)',
-                backgroundColor: 'rgba(241, 143, 1, 0.1)',
-                fill: true,
-                tension: 0.3
-            }]
+    const models = Object.keys(modelData.performance_metrics);
+    const maeValues = models.map(m => modelData.performance_metrics[m].mae);
+    const rmseValues = models.map(m => modelData.performance_metrics[m].rmse);
+    const mapeValues = models.map(m => modelData.performance_metrics[m].mape);
+    
+    const trace1 = {
+        x: models,
+        y: maeValues,
+        type: 'bar',
+        name: 'MAE',
+        marker: { color: '#667eea' }
+    };
+    
+    const trace2 = {
+        x: models,
+        y: rmseValues,
+        type: 'bar',
+        name: 'RMSE',
+        marker: { color: '#764ba2' }
+    };
+    
+    const trace3 = {
+        x: models,
+        y: mapeValues,
+        type: 'bar',
+        name: 'MAPE (%)',
+        marker: { color: '#ff6b6b' },
+        yaxis: 'y2'
+    };
+    
+    const layout = {
+        title: 'Complete Model Performance Comparison',
+        xaxis: { title: 'Models' },
+        yaxis: { title: 'Error (MAE/RMSE)' },
+        yaxis2: {
+            title: 'MAPE (%)',
+            overlaying: 'y',
+            side: 'right'
         },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
-            }
+        barmode: 'group'
+    };
+    
+    Plotly.newPlot('modelPerformanceChart', [trace1, trace2, trace3], layout, {responsive: true});
+}
+
+function initializeStatisticalAnalysis(data) {
+    const prices = data.map(d => d['Price(USD/ton)']);
+    
+    // Price distribution histogram
+    const distributionTrace = {
+        x: prices,
+        type: 'histogram',
+        nbinsx: 20,
+        marker: { color: '#667eea' },
+        opacity: 0.7
+    };
+    
+    const distributionLayout = {
+        title: 'Price Distribution',
+        xaxis: { title: 'Price (USD/ton)' },
+        yaxis: { title: 'Frequency' }
+    };
+    
+    Plotly.newPlot('distributionChart', [distributionTrace], distributionLayout, {responsive: true});
+    
+    // Volatility analysis
+    const returns = [];
+    for (let i = 1; i < prices.length; i++) {
+        returns.push(((prices[i] - prices[i-1]) / prices[i-1]) * 100);
+    }
+    
+    const volatilityTrace = {
+        x: data.slice(1).map(d => d.Month),
+        y: returns,
+        type: 'scatter',
+        mode: 'lines',
+        name: 'Monthly Returns (%)',
+        line: { color: '#ff6b6b' }
+    };
+    
+    const volatilityLayout = {
+        title: 'Price Volatility Analysis',
+        xaxis: { title: 'Date' },
+        yaxis: { title: 'Monthly Return (%)' }
+    };
+    
+    Plotly.newPlot('volatilityChart', [volatilityTrace], volatilityLayout, {responsive: true});
+    
+    // Simple correlation with time
+    const timeIndex = data.map((_, i) => i);
+    const correlation = calculateCorrelation(timeIndex, prices);
+    
+    const corrTrace = {
+        x: timeIndex,
+        y: prices,
+        mode: 'markers',
+        type: 'scatter',
+        marker: { color: '#764ba2', size: 8 },
+        name: `Correlation: ${correlation.toFixed(3)}`
+    };
+    
+    const corrLayout = {
+        title: 'Price vs Time Correlation',
+        xaxis: { title: 'Time Index' },
+        yaxis: { title: 'Price (USD/ton)' }
+    };
+    
+    Plotly.newPlot('correlationChart', [corrTrace], corrLayout, {responsive: true});
+    
+    // Trend decomposition (simplified)
+    const trend = calculateMovingAverage(prices, 12);
+    const seasonal = prices.map((p, i) => p - (trend[i] || p));
+    
+    const trendTrace = {
+        x: data.map(d => d.Month),
+        y: trend,
+        type: 'scatter',
+        mode: 'lines',
+        name: 'Trend Component',
+        line: { color: '#667eea' }
+    };
+    
+    const seasonalTrace = {
+        x: data.map(d => d.Month),
+        y: seasonal,
+        type: 'scatter',
+        mode: 'lines',
+        name: 'Seasonal Component',
+        line: { color: '#ff6b6b' },
+        yaxis: 'y2'
+    };
+    
+    const decompLayout = {
+        title: 'Trend Decomposition',
+        xaxis: { title: 'Date' },
+        yaxis: { title: 'Trend' },
+        yaxis2: {
+            title: 'Seasonal',
+            overlaying: 'y',
+            side: 'right'
         }
-    });
+    };
+    
+    Plotly.newPlot('trendDecomposition', [trendTrace, seasonalTrace], decompLayout, {responsive: true});
+}
+
+// Utility functions
+function calculateMovingAverage(data, window) {
+    const result = [];
+    for (let i = 0; i < data.length; i++) {
+        if (i < window - 1) {
+            result.push(null);
+        } else {
+            const sum = data.slice(i - window + 1, i + 1).reduce((a, b) => a + b, 0);
+            result.push(sum / window);
+        }
+    }
+    return result;
+}
+
+function calculateCorrelation(x, y) {
+    const n = x.length;
+    const sumX = x.reduce((a, b) => a + b, 0);
+    const sumY = y.reduce((a, b) => a + b, 0);
+    const sumXY = x.reduce((sum, xi, i) => sum + xi * y[i], 0);
+    const sumX2 = x.reduce((sum, xi) => sum + xi * xi, 0);
+    const sumY2 = y.reduce((sum, yi) => sum + yi * yi, 0);
+    
+    const numerator = n * sumXY - sumX * sumY;
+    const denominator = Math.sqrt((n * sumX2 - sumX * sumX) * (n * sumY2 - sumY * sumY));
+    
+    return denominator === 0 ? 0 : numerator / denominator;
+}
+
+function showErrorMessage(message) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = 'alert alert-danger alert-dismissible fade show';
+    alertDiv.innerHTML = `
+        <i class="fas fa-exclamation-circle me-2"></i>${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.querySelector('.container-fluid').prepend(alertDiv);
 }
 
 function retrainModels() {
     if (confirm('Are you sure you want to retrain all models? This may take several minutes.')) {
         const button = event.target;
+        const originalText = button.innerHTML;
         button.disabled = true;
-        button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Retraining...';
+        button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Retraining Models...';
         
         fetch('/api/retrain_models', { method: 'POST' })
         .then(response => response.json())
         .then(data => {
             button.disabled = false;
-            button.innerHTML = '<i class="fas fa-sync-alt me-2"></i>Retrain Models';
+            button.innerHTML = originalText;
             
             if (data.best_model) {
                 alert(`Models retrained successfully! Best model: ${data.best_model.toUpperCase()}`);
-                location.reload();
+                setTimeout(() => location.reload(), 1000);
             } else {
                 alert('Error retraining models: ' + (data.error || 'Unknown error'));
             }
         })
         .catch(error => {
             button.disabled = false;
-            button.innerHTML = '<i class="fas fa-sync-alt me-2"></i>Retrain Models';
+            button.innerHTML = originalText;
             alert('Network error: ' + error.message);
         });
     }
 }
 
 function exportAnalytics(format) {
-    alert(`Export to ${format.toUpperCase()} functionality will be implemented in the next version.`);
-}
-
-function generateReport() {
-    alert('Advanced report generation functionality will be implemented in the next version.');
-}
-
-function refreshAnalytics() {
-    location.reload();
+    alert(`Advanced ${format.toUpperCase()} export functionality will be implemented in the next version.`);
 }
 </script>
 {% endblock %}

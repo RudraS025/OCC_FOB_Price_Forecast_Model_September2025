@@ -202,7 +202,7 @@ def update_data():
 
 @app.route('/analytics')
 def analytics():
-    """Analytics dashboard"""
+    """Modern Analytics Intelligence Center"""
     try:
         # Get model performance data
         model_info = forecasting_engine.get_model_info()
@@ -213,26 +213,10 @@ def analytics():
         # Get data summary
         data_summary = data_manager.get_data_summary()
         
-        # Get historical data for charts
-        historical_data = data_manager.get_data()
-        
-        # Import visualization engine
-        from visualization_engine import VisualizationEngine
-        viz_engine = VisualizationEngine()
-        
-        # Generate analytics charts
-        charts = {
-            'price_trend': viz_engine.create_price_trend_chart(historical_data),
-            'seasonal_analysis': viz_engine.create_seasonal_analysis(historical_data),
-            'model_performance': viz_engine.create_model_performance_chart(model_info),
-            'data_statistics': viz_engine.create_statistics_dashboard(data_summary)
-        }
-        
         return render_template('analytics.html', 
                              model_info=model_info,
                              data_validation=data_validation,
-                             data_summary=data_summary,
-                             charts=charts)
+                             data_summary=data_summary)
     except Exception as e:
         logger.error(f"Error in analytics route: {e}")
         return render_template('error.html', error=str(e)), 500
@@ -259,6 +243,36 @@ def api_model_performance():
     except Exception as e:
         logger.error(f"Error in model_performance API: {e}")
         return jsonify({'error': str(e)}), 500
+
+@app.route('/api/retrain_models', methods=['POST'])
+def api_retrain_models():
+    """API endpoint to retrain all models"""
+    try:
+        logger.info("Starting model retraining...")
+        
+        # Retrain all models
+        forecasting_engine.train_models()
+        
+        # Get updated model info
+        model_info = forecasting_engine.get_model_info()
+        
+        logger.info(f"Model retraining completed. Best model: {model_info['best_model']}")
+        
+        return jsonify({
+            'success': True,
+            'best_model': model_info['best_model'],
+            'available_models': model_info['available_models'],
+            'performance_metrics': model_info['performance_metrics'],
+            'message': 'All models retrained successfully'
+        })
+        
+    except Exception as e:
+        logger.error(f"Error retraining models: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'message': 'Failed to retrain models'
+        }), 500
 
 @app.route('/api/data_summary')
 def api_data_summary():
