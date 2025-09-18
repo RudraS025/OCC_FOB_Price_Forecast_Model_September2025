@@ -277,10 +277,14 @@ class ForecastingEngine:
                 actual = test_data['Price(USD/ton)'].values
                 mse = mean_squared_error(actual, predictions)
                 mae = mean_absolute_error(actual, predictions)
+                rmse = np.sqrt(mse)
+                mape = np.mean(np.abs((actual - predictions) / actual)) * 100
                 
                 model_scores[model_name] = {
                     'mse': mse,
                     'mae': mae,
+                    'rmse': rmse,
+                    'mape': mape,
                     'score': mse + mae  # Combined score
                 }
                 
