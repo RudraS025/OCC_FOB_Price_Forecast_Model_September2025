@@ -92,8 +92,10 @@ def forecast():
             
             # Generate forecast
             forecast_result = forecasting_engine.forecast(n_periods=n_months, model_name=model_name)
+            logger.info(f"Forecast result keys: {forecast_result.keys() if forecast_result else 'None'}")
+            logger.info(f"Forecast success: {forecast_result.get('success', 'Not found') if forecast_result else 'Result is None'}")
             
-            if forecast_result['success']:
+            if forecast_result.get('success', False):
                 # Get historical data for context
                 historical_data = data_manager.get_data()
                 
@@ -101,14 +103,14 @@ def forecast():
                 future_dates = data_manager.generate_future_dates(n_months)
                 future_dates_str = [date.strftime('%Y-%m-%d') for date in future_dates]
                 
-                # Prepare response
+                # Prepare response - ensure all required keys exist
                 response = {
                     'success': True,
-                    'forecast': forecast_result['forecast'],
-                    'lower_ci': forecast_result['lower_ci'],
-                    'upper_ci': forecast_result['upper_ci'],
+                    'forecast': forecast_result.get('forecast', []),
+                    'lower_ci': forecast_result.get('lower_ci', []),
+                    'upper_ci': forecast_result.get('upper_ci', []),
                     'future_dates': future_dates_str,
-                    'model_used': forecast_result['model_used'],
+                    'model_used': forecast_result.get('model_used', 'unknown'),
                     'n_months': n_months,
                     'timestamp': datetime.now().isoformat()
                 }
@@ -117,9 +119,9 @@ def forecast():
                 try:
                     forecast_chart = create_simple_forecast_chart(
                         historical_data, 
-                        forecast_result['forecast'], 
+                        response['forecast'], 
                         future_dates,
-                        confidence_intervals=(forecast_result['lower_ci'], forecast_result['upper_ci'])
+                        confidence_intervals=(response['lower_ci'], response['upper_ci'])
                     )
                     response['chart_html'] = forecast_chart
                 except Exception as viz_error:
@@ -128,12 +130,12 @@ def forecast():
                     response['chart_html'] = f"""
                     <div class="alert alert-success">
                         <h5>✅ Forecast Generated Successfully!</h5>
-                        <p><strong>Model:</strong> {forecast_result['model_used']}</p>
+                        <p><strong>Model:</strong> {response['model_used']}</p>
                         <p><strong>Forecast Period:</strong> {n_months} months</p>
                         <p><strong>Predicted Values:</strong></p>
                         <ul>
-                            {''.join([f'<li>{future_dates_str[i]}: ${forecast_result["forecast"][i]:.2f}/ton</li>' for i in range(min(5, len(forecast_result["forecast"])))])}
-                            {f'<li>... and {len(forecast_result["forecast"]) - 5} more values</li>' if len(forecast_result["forecast"]) > 5 else ''}
+                            {''.join([f'<li>{future_dates_str[i]}: ${response["forecast"][i]:.2f}/ton</li>' for i in range(min(5, len(response["forecast"])))])}
+                            {f'<li>... and {len(response["forecast"]) - 5} more values</li>' if len(response["forecast"]) > 5 else ''}
                         </ul>
                     </div>
                     """

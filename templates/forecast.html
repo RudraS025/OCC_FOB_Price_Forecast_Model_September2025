@@ -138,9 +138,9 @@
                     <h6>Best Model: {{ model_info.best_model.upper() }}</h6>
                     {% set best_metrics = model_info.performance_metrics[model_info.best_model] %}
                     <ul class="list-unstyled">
-                        <li><strong>MAE:</strong> {{ "%.2f"|format(best_metrics.mae) }}</li>
-                        <li><strong>RMSE:</strong> {{ "%.2f"|format(best_metrics.rmse) }}</li>
-                        <li><strong>MAPE:</strong> {{ "%.2f"|format(best_metrics.mape) }}%</li>
+                        <li><strong>MAE:</strong> {{ "%.2f"|format(best_metrics['mae']) }}</li>
+                        <li><strong>RMSE:</strong> {{ "%.2f"|format(best_metrics['rmse']) }}</li>
+                        <li><strong>MAPE:</strong> {{ "%.2f"|format(best_metrics['mape']) }}%</li>
                     </ul>
                 {% else %}
                     <p class="text-muted">Performance metrics will be available after model evaluation.</p>
