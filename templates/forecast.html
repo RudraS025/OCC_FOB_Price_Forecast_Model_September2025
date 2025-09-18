@@ -339,26 +339,29 @@ function createForecastChart(forecastData) {
                 console.log('Historical point:', { date: allLabels[allLabels.length-1], price: price });
             });
             
-            // Add smooth connection between historical and forecast
+            // Add connection between historical and forecast (clean approach)
             if (historicalPrices.length > 0 && forecastData.forecast.length > 0) {
                 const lastHistoricalPrice = historicalPrices[historicalPrices.length - 1];
-                const firstForecastPrice = forecastData.forecast[0];
                 
-                // Create a connection point that bridges historical to forecast
+                // Add first forecast point directly
                 const firstForecastDate = new Date(forecastData.future_dates[0]);
                 const connectionLabel = firstForecastDate.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
                 
                 allLabels.push(connectionLabel);
-                historicalPrices.push(lastHistoricalPrice); // Extend historical line to connection point
-                forecastPrices.push(firstForecastPrice);    // Start forecast line at connection point
-                connectionPrices.push(lastHistoricalPrice); // Connection line for smooth transition
+                historicalPrices.push(null);               // Historical line ends at its last point
+                forecastPrices.push(forecastData.forecast[0]); // Forecast starts at its first point
+                connectionPrices.push(null);               // No visible connection line
                 
-                console.log('Connection point:', { label: connectionLabel, historical: lastHistoricalPrice, forecast: firstForecastPrice });
+                console.log('Transition point:', { 
+                    label: connectionLabel, 
+                    lastHistorical: lastHistoricalPrice, 
+                    firstForecast: forecastData.forecast[0]
+                });
             }
             
-            // Add remaining forecast data (skip first as it's already added as connection point)
+            // Add remaining forecast data (skip first as it's already added)
             forecastData.future_dates.forEach((date, index) => {
-                if (index === 0) return; // Skip first point as we already added it as connection
+                if (index === 0) return; // Skip first point as we already added it
                 const dateObj = new Date(date);
                 const dateLabel = dateObj.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
                 
