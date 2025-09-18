@@ -55,10 +55,8 @@ def initialize_app():
         logger.error(f"Error during initialization: {e}")
         # Continue with limited functionality
 
-@app.before_first_request
-def startup():
-    """Initialize the app on first request"""
-    initialize_app()
+# Initialize on startup instead of before_first_request (deprecated in Flask 3.x)
+# We'll call initialize_app() in the main routes as needed
 
 @app.route('/')
 def index():
