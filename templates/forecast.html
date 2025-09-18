@@ -325,11 +325,7 @@ function createForecastChart(forecastData) {
             const allLabels = [];
             const historicalPrices = [];
             const forecastPrices = [];
-            const confidenceUpper = [];
-            const confidenceLower = [];
-            
-            // Prepare data arrays
-            const connectionPrices = []; // For dotted connection line
+            const connectionPrices = []; // For smooth connection line
             
             // Add historical data
             last4Months.forEach(item => {
@@ -343,30 +339,36 @@ function createForecastChart(forecastData) {
                 console.log('Historical point:', { date: allLabels[allLabels.length-1], price: price });
             });
             
-            // Add connection point between historical and forecast
+            // Add smooth connection between historical and forecast
             if (historicalPrices.length > 0 && forecastData.forecast.length > 0) {
                 const lastHistoricalPrice = historicalPrices[historicalPrices.length - 1];
-                const firstForecastDate = new Date(forecastData.future_dates[0]);
-                allLabels.push(firstForecastDate.toLocaleDateString('en-US', { year: 'numeric', month: 'short' }));
-                historicalPrices.push(null);
-                forecastPrices.push(null);
-                connectionPrices.push(lastHistoricalPrice);
+                const firstForecastPrice = forecastData.forecast[0];
                 
-                // Add second connection point for smooth transition
-                allLabels.push(firstForecastDate.toLocaleDateString('en-US', { year: 'numeric', month: 'short' }));
-                historicalPrices.push(null);
-                forecastPrices.push(forecastData.forecast[0]);
-                connectionPrices.push(forecastData.forecast[0]);
+                // Create a connection point that bridges historical to forecast
+                const firstForecastDate = new Date(forecastData.future_dates[0]);
+                const connectionLabel = firstForecastDate.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
+                
+                allLabels.push(connectionLabel);
+                historicalPrices.push(lastHistoricalPrice); // Extend historical line to connection point
+                forecastPrices.push(firstForecastPrice);    // Start forecast line at connection point
+                connectionPrices.push(lastHistoricalPrice); // Connection line for smooth transition
+                
+                console.log('Connection point:', { label: connectionLabel, historical: lastHistoricalPrice, forecast: firstForecastPrice });
             }
             
-            // Add remaining forecast data
+            // Add remaining forecast data (skip first as it's already added as connection point)
             forecastData.future_dates.forEach((date, index) => {
-                if (index === 0) return; // Skip first point as we already added it
+                if (index === 0) return; // Skip first point as we already added it as connection
                 const dateObj = new Date(date);
-                allLabels.push(dateObj.toLocaleDateString('en-US', { year: 'numeric', month: 'short' }));
-                historicalPrices.push(null);
-                forecastPrices.push(forecastData.forecast[index]);
-                connectionPrices.push(null);
+                const dateLabel = dateObj.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
+                
+                // Check for duplicate labels to prevent double entries
+                if (!allLabels.includes(dateLabel)) {
+                    allLabels.push(dateLabel);
+                    historicalPrices.push(null);
+                    forecastPrices.push(forecastData.forecast[index]);
+                    connectionPrices.push(null);
+                }
             });
             
             console.log('Chart data prepared:', {
@@ -421,20 +423,10 @@ function createForecastChart(forecastData) {
                             pointBackgroundColor: '#2E86AB',
                             pointBorderColor: '#ffffff',
                             pointBorderWidth: 2,
-                            tension: 0.2,
-                            spanGaps: false
-                        },
-                        {
-                            label: 'Connection',
-                            data: connectionPrices,
-                            borderColor: '#888888',
-                            backgroundColor: 'transparent',
-                            borderWidth: 2,
-                            pointRadius: 0,
-                            borderDash: [5, 5],
-                            tension: 0,
+                            tension: 0.3,
                             spanGaps: false,
-                            showLine: true
+                            pointHoverRadius: 8,
+                            pointHoverBorderWidth: 3
                         },
                         {
                             label: 'Forecasted Prices',
@@ -446,9 +438,11 @@ function createForecastChart(forecastData) {
                             pointBackgroundColor: '#F18F01',
                             pointBorderColor: '#ffffff',
                             pointBorderWidth: 2,
-                            borderDash: [5, 5],
-                            tension: 0.2,
-                            spanGaps: false
+                            borderDash: [8, 4],
+                            tension: 0.3,
+                            spanGaps: false,
+                            pointHoverRadius: 8,
+                            pointHoverBorderWidth: 3
                         }
                     ]
                 },
@@ -459,14 +453,20 @@ function createForecastChart(forecastData) {
                         intersect: false,
                         mode: 'index'
                     },
+                    elements: {
+                        point: {
+                            hoverRadius: 8
+                        }
+                    },
                     plugins: {
                         title: {
                             display: true,
                             text: 'OCC Price Trend: Historical vs Forecasted',
                             font: {
-                                size: 16,
+                                size: 18,
                                 weight: 'bold'
-                            }
+                            },
+                            padding: 20
                         },
                         legend: {
                             display: true,
@@ -474,9 +474,8 @@ function createForecastChart(forecastData) {
                             labels: {
                                 usePointStyle: true,
                                 padding: 20,
-                                filter: function(legendItem, chartData) {
-                                    // Hide the connection line from legend
-                                    return legendItem.text !== 'Connection';
+                                font: {
+                                    size: 12
                                 }
                             }
                         },
@@ -485,7 +484,9 @@ function createForecastChart(forecastData) {
                             titleColor: '#ffffff',
                             bodyColor: '#ffffff',
                             borderColor: '#2E86AB',
-                            borderWidth: 1,
+                            borderWidth: 2,
+                            cornerRadius: 8,
+                            displayColors: true,
                             callbacks: {
                                 label: function(context) {
                                     if (context.raw !== null && context.raw !== undefined) {
@@ -505,21 +506,30 @@ function createForecastChart(forecastData) {
                                 display: true,
                                 text: 'Time Period',
                                 font: {
-                                    weight: 'bold'
+                                    weight: 'bold',
+                                    size: 14
                                 }
                             },
                             grid: {
                                 color: 'rgba(0, 0, 0, 0.1)',
                                 offset: true
                             },
-                            offset: true
+                            offset: true,
+                            ticks: {
+                                maxRotation: 45,
+                                minRotation: 0,
+                                font: {
+                                    size: 11
+                                }
+                            }
                         },
                         y: {
                             title: {
                                 display: true,
                                 text: 'Price (USD/ton)',
                                 font: {
-                                    weight: 'bold'
+                                    weight: 'bold',
+                                    size: 14
                                 }
                             },
                             min: yAxisMin,
@@ -530,13 +540,19 @@ function createForecastChart(forecastData) {
                             ticks: {
                                 callback: function(value) {
                                     return '$' + value.toFixed(0);
+                                },
+                                font: {
+                                    size: 11
                                 }
                             }
                         }
                     },
                     animation: {
-                        duration: 1000,
+                        duration: 1500,
                         easing: 'easeInOutQuart'
+                    },
+                    hover: {
+                        animationDuration: 200
                     }
                 }
             });
